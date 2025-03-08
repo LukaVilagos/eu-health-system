@@ -9,6 +9,7 @@ const todos = useCollection(collection(db, 'todos'));
 </script>
 
 <template>
+  <Button>Commit test</Button>
   <ul class=" bg-black-100">
     <li v-for="todo in todos" v-if="todos" :key="todo.id">
       <label>{{ todo.text }}</label>
