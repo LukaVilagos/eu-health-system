@@ -1,12 +1,11 @@
-<script setup lang="ts">
-
+<script lang="ts" setup>
 import Todos from "../components/Todos.vue";
-</script>
+import Auth from "../components/Auth.vue";
+import {Divider} from "primevue";
+</script>\
 
 <template>
-  <Todos />
+  <Auth/>
+  <Divider/>
+  <Todos/>
 </template>
-
-<style scoped>
-
-</style>
