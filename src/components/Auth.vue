@@ -1,39 +1,31 @@
+<!-- SomeComponent.vue -->
 <script lang="ts" setup>
-import { ref } from 'vue';
 import Button from "primevue/button";
-import Card from "primevue/card";
-import { auth, signInWithPopup, provider, signOut, onAuthStateChanged } from "../firebase/app.ts";
+import {inject} from "vue";
+import {authKey} from "../composables/authKey.ts";
 
-const user = ref();
+const auth = inject(authKey);
 
-async function signIn() {
-  try {
-    const result = await signInWithPopup(auth, provider);
-    user.value = result.user;
-  } catch (error) {
-    console.error(error);
-  }
+if (!auth) {
+  throw new Error('Auth was not provided');
 }
 
-async function handleSignOut() {
-  await signOut(auth);
-  user.value = null;
-}
+const {user, isLoading, signIn, signOut} = auth;
 
-onAuthStateChanged(auth, (currentUser) => {
-  user.value = currentUser;
-});
 </script>
 
 <template>
-  <Card>
-    <template #title>Auth Card</template>
-    <template #content>
-      <div class="flex gap-4">
-        <Button v-if="!user" label="Sign in" @click="signIn" />
-        <Button v-else label="Sign out" @click="handleSignOut" />
+  <div>
+    <div v-if="isLoading">Loading...</div>
+
+    <div v-else>
+      <Button v-if="!user" label="Sign in" @click="signIn"/>
+      <Button v-else label="Sign out" @click="signOut"/>
+
+      <div v-if="user">
+        You are logged in as {{ user.displayName }}
+        <RouterLink :to="{ name: 'Home' }">Go to Home Page</RouterLink>
       </div>
-      <div v-if="user">You are logged in as {{ user.displayName }}</div>
-    </template>
-  </Card>
+    </div>
+  </div>
 </template>

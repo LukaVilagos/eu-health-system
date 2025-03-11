@@ -1,15 +1,31 @@
 import HomeView from "./views/HomeView.vue";
-import {createMemoryHistory, createRouter } from "vue-router";
+import {createWebHistory, createRouter, type RouteRecordRaw} from "vue-router";
+import SignIn from "./views/SignIn.vue";
 
-const routes = [
+const protectRouteMeta = {
+    isProtected: true
+}
+
+const unprotectRouteMeta = {
+    isProtected: false
+}
+
+const routes: Readonly<RouteRecordRaw[]> = [
     {
         path: '/',
+        component: SignIn,
+        name: 'SignIn',
+        meta: unprotectRouteMeta
+    },
+    {
+        path: '/home',
         component: HomeView,
-        name: 'home'
+        name: 'Home',
+        meta: protectRouteMeta
     }
 ]
 
 export const router = createRouter({
-    history: createMemoryHistory(),
+    history: createWebHistory(),
     routes
 })
