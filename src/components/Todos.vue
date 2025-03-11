@@ -1,10 +1,9 @@
 <script lang="ts" setup>
 import {collection} from 'firebase/firestore';
 import {useCollection} from 'vuefire';
-import {getFirebase} from "../firebase/app.ts";
+import {db} from "../firebase/app.ts";
 import {Button, Card, OrderList} from "primevue";
 
-const {db} = getFirebase();
 const todos = useCollection(collection(db, 'todos'));
 </script>
 
