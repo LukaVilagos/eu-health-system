@@ -1,12 +1,14 @@
 <script lang="ts" setup>
-
-import Auth from "../components/Auth.vue";
+import {Card} from "primevue"
 import PageWrapper from "../components/library/PageWrapper.vue";
 </script>
 
 <template>
   <PageWrapper>
-    <Auth/>
+    <Card>
+      <template #title>Forbidden</template>
+      <template #subtitle>You don't have access to this page</template>
+    </Card>
   </PageWrapper>
 </template>
 

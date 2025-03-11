@@ -30,3 +30,7 @@ export {
     auth, db, provider, analytics,
     onAuthStateChanged, signInWithPopup, signOut
 }
+
+export const getFirebaseApp = {
+    firebaseApp: app
+}

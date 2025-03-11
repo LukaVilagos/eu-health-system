@@ -1,8 +1,10 @@
 <script lang="ts" setup>
 import Todos from "../components/Todos.vue";
-import {Divider} from "primevue";
+import PageWrapper from "../components/library/PageWrapper.vue";
 </script>\
 
 <template>
-  <Todos/>
+  <PageWrapper>
+    <Todos/>
+  </PageWrapper>
 </template>

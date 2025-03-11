@@ -1,4 +1,3 @@
-<!-- SomeComponent.vue -->
 <script lang="ts" setup>
 import Button from "primevue/button";
 import {inject} from "vue";
@@ -11,7 +10,6 @@ if (!auth) {
 }
 
 const {user, isLoading, signIn, signOut} = auth;
-
 </script>
 
 <template>
