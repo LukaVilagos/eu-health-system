@@ -1,7 +1,10 @@
-import { ref, computed, effectScope } from 'vue';
-import { auth, signInWithPopup, provider, signOut as firebaseSignOut, onAuthStateChanged } from "../firebase/app";
-import { getCurrentUser } from "vuefire";
-import type { User } from 'firebase/auth';
+import {computed, effectScope, ref} from 'vue';
+import {auth, db, onAuthStateChanged, provider, signInWithPopup, signOut as firebaseSignOut} from "../firebase/app";
+import {getCurrentUser} from "vuefire";
+import type {User} from 'firebase/auth';
+import {doc, getDoc} from "firebase/firestore";
+import {useRouter} from 'vue-router';
+
 
 interface AuthState {
     user: User | null;
@@ -11,17 +14,13 @@ interface AuthState {
 
 export function useAuth() {
     const scope = effectScope();
+    const router = useRouter();
 
     const state = ref<AuthState>({
-        user: null,
-        isLoading: true,
-        error: null
+        user: null, isLoading: true, error: null
     });
 
-    async function handleAuthOperation<T>(
-        operation: () => Promise<T>,
-        onSuccess?: (result: T) => void
-    ): Promise<T | null> {
+    async function handleAuthOperation<T>(operation: () => Promise<T>, onSuccess?: (result: T) => void): Promise<T | null> {
         try {
             state.value.isLoading = true;
             state.value.error = null;
@@ -45,39 +44,45 @@ export function useAuth() {
             state.value.isLoading = false;
         });
 
-        return onAuthStateChanged(
-            auth,
-            (currentUser) => {
-                state.value.user = currentUser;
-                state.value.isLoading = false;
-            },
-            (err) => {
-                state.value.error = err;
-                state.value.isLoading = false;
-            }
-        );
+        return onAuthStateChanged(auth, (currentUser) => {
+            state.value.user = currentUser;
+            state.value.isLoading = false;
+        }, (err) => {
+            state.value.error = err;
+            state.value.isLoading = false;
+        });
     }
 
     const unsubscribe = setupAuthStateListener();
 
     async function signIn() {
-        return handleAuthOperation(
-            async () => {
-                const result = await signInWithPopup(auth, provider);
-                return result.user;
-            },
-            (resultUser) => { state.value.user = resultUser; }
-        );
+        return handleAuthOperation(async () => {
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDoc = await getDoc(userDocRef);
+
+            if (!userDoc.exists()) {
+                await router.push({name: 'RoleSelection'});
+            } else {
+                await router.push({name: 'Home'});
+            }
+
+            return user;
+        }, (resultUser) => {
+            state.value.user = resultUser;
+        });
     }
 
     async function signOut() {
-        return handleAuthOperation(
-            async () => {
-                await firebaseSignOut(auth);
-                return null;
-            },
-            () => { state.value.user = null; }
-        );
+        return handleAuthOperation(async () => {
+            await firebaseSignOut(auth);
+            return null;
+        }, async () => {
+            state.value.user = null;
+            await router.push({name: 'SignIn'});
+        });
     }
 
     async function getCurrentlySignedInUser() {

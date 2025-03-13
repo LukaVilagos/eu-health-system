@@ -3,10 +3,18 @@ import {collection} from 'firebase/firestore';
 import {useCollection} from 'vuefire';
 import {db} from "../firebase/app.ts";
 import {Button, Card, OrderList} from "primevue";
-import {useAuth} from "../composables/useAuth.ts";
+import {inject} from "vue";
+import {authKey} from "../composables/authKey.ts";
 
 const todos = useCollection(collection(db, 'todos'));
-const {user} = useAuth();
+
+const auth = inject(authKey);
+
+if (!auth) {
+  throw new Error('Auth was not provided');
+}
+
+const {user, signOut} = auth;
 </script>
 
 <template>
@@ -19,7 +27,7 @@ const {user} = useAuth();
           {{ option.text }}
         </template>
       </OrderList>
-      <Button label="Add" />
+      <Button label="Sign out" @click="signOut"/>
     </template>
     <template #footer>footer</template>
   </Card>
