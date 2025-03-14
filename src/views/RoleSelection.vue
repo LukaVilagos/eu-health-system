@@ -2,51 +2,32 @@
 import {Button, Card, Message, Select} from "primevue";
 import {Form} from "@primevue/forms";
 import PageWrapper from "../components/library/PageWrapper.vue";
-import {useRouter} from "vue-router";
-import {doc, setDoc} from "firebase/firestore";
-import {db} from "../firebase/app.ts";
-import {inject, reactive, ref} from "vue";
+import {reactive, ref} from "vue";
 import {zodResolver} from "@primevue/forms/resolvers/zod"
+import {assignRoleAndCreateUserDocument} from "../models/User.ts";
+import {useRouter} from "vue-router";
 import {z} from "zod";
-import {authKey} from "../composables/authKey.ts";
+import {GeneralErrors} from "../constants/errors.ts";
+import {useAuthenticatedUser} from "../composables/useAuthGuard.ts";
 
-const auth = inject(authKey);
-
-if (!auth) {
-  throw new Error('Auth was not provided');
-}
-
-const {user} = auth;
-const router = useRouter();
-
-const ROLE_REQUIRED_ERROR = 'Role is required.';
+const user = useAuthenticatedUser();
+const router = useRouter()
 
 const formSchema = z.object({
-  role: z.string().nonempty(ROLE_REQUIRED_ERROR)
+  role: z.string().nonempty(GeneralErrors.ROLE_REQUIRED_ERROR)
 });
 
-type FormValues = z.infer<typeof formSchema>;
-
-const formValues = reactive<FormValues>({role: ''});
-
+type FormSchemaType = z.infer<typeof formSchema>;
+const formValues = reactive<FormSchemaType>({role: ''});
 const resolver = ref(zodResolver(formSchema));
 
-async function assignRoleAndCreateUserDocument(role: string) {
-  if (user?.value) {
-    const userDocRef = doc(db, 'users', user.value.uid);
-    await setDoc(userDocRef, {
-      uid: user.value.uid,
-      email: user.value.email,
-      displayName: user.value.displayName,
-      role,
-      createdAt: new Date()
-    });
-    await router.push({name: 'Home'});
-  }
-}
-
 async function onFormSubmit() {
-  await assignRoleAndCreateUserDocument(formValues.role);
+  try {
+    await assignRoleAndCreateUserDocument(user, formValues.role);
+    await router.push({name: 'Home'});
+  } catch (error) {
+    console.error("Error creating user document:", error);
+  }
 }
 
 </script>

@@ -52,15 +52,15 @@ export function useAuth() {
             state.value.isLoading = false;
         });
     }
-
     const unsubscribe = setupAuthStateListener();
 
     async function signIn() {
         return handleAuthOperation(async () => {
             const result = await signInWithPopup(auth, provider);
-            const user = result.user;
-
-            const userDocRef = doc(db, 'users', user.uid);
+            return result.user;
+        }, async (resultUser) => {
+            state.value.user = resultUser;
+            const userDocRef = doc(db, 'users', resultUser.uid);
             const userDoc = await getDoc(userDocRef);
 
             if (!userDoc.exists()) {
@@ -68,10 +68,6 @@ export function useAuth() {
             } else {
                 await router.push({name: 'Home'});
             }
-
-            return user;
-        }, (resultUser) => {
-            state.value.user = resultUser;
         });
     }
 

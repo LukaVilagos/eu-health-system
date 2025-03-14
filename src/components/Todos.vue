@@ -3,18 +3,12 @@ import {collection} from 'firebase/firestore';
 import {useCollection} from 'vuefire';
 import {db} from "../firebase/app.ts";
 import {Button, Card, OrderList} from "primevue";
-import {inject} from "vue";
-import {authKey} from "../composables/authKey.ts";
+import {useAuthGuard} from "../composables/useAuthGuard.ts";
 
 const todos = useCollection(collection(db, 'todos'));
-
-const auth = inject(authKey);
-
-if (!auth) {
-  throw new Error('Auth was not provided');
-}
-
+const auth = useAuthGuard()
 const {user, signOut} = auth;
+
 </script>
 
 <template>

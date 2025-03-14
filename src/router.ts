@@ -7,9 +7,14 @@ import {useAuth} from "./composables/useAuth.ts";
 import RoleSelection from "./views/RoleSelection.vue";
 import {doc, getDoc} from "firebase/firestore";
 import {db} from "./firebase/app.ts";
+import {USER_COLLECTION_NAME} from "./models/User.ts";
 
 const protectRouteMeta = {
     isProtected: true
+}
+
+const guestRouteMeta = {
+    isGuestRoute: true,
 }
 
 const unprotectRouteMeta = {
@@ -27,7 +32,7 @@ const doctorRouteMeta = {
 */
 
 const routes: Readonly<RouteRecordRaw[]> = [{
-    path: '/', component: SignIn, name: 'SignIn', meta: unprotectRouteMeta
+    path: '/', component: SignIn, name: 'SignIn', meta: {...unprotectRouteMeta, ...guestRouteMeta}
 }, {
     path: '/role-selector', component: RoleSelection, name: 'RoleSelection', meta: protectRouteMeta,
 }, {
@@ -49,7 +54,7 @@ router.beforeEach(async (to, _from) => {
 
     if (to.name === 'RoleSelection') {
         if (currentUser) {
-            const userDocRef = doc(db, "users", currentUser.uid);
+            const userDocRef = doc(db, USER_COLLECTION_NAME, currentUser.uid);
             const userDoc = await getDoc(userDocRef);
 
             if (userDoc.exists() && userDoc.data().role) {
@@ -60,6 +65,10 @@ router.beforeEach(async (to, _from) => {
 
     if (to.meta.isProtected && !currentUser) {
         return { name: 'Forbidden' };
+    }
+
+    if (to.meta.isGuestRoute && currentUser) {
+        return { name: 'Home' };
     }
 
     return true;
