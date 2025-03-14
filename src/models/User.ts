@@ -1,6 +1,6 @@
 import {z} from "zod";
 import {GeneralErrors} from "../constants/errors.ts";
-import {doc, setDoc} from "firebase/firestore";
+import {doc, getDoc, setDoc} from "firebase/firestore";
 import {db} from "../firebase/app.ts";
 import type {User} from 'firebase/auth';
 
@@ -31,4 +31,20 @@ export async function assignRoleAndCreateUserDocument(user: User, role: string) 
 
     const userDocRef = doc(db, USER_COLLECTION_NAME, user.uid);
     return await setDoc(userDocRef, validatedData);
+}
+
+export async function getUserDocument(userId: string): Promise<UserSchemaType | null> {
+    try {
+        const userDocRef = doc(db, USER_COLLECTION_NAME, userId);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+            return null;
+        }
+
+        return userDoc.data() as UserSchemaType;
+    } catch (error) {
+        console.error("Error fetching user document:", error);
+        return null;
+    }
 }

@@ -14,7 +14,11 @@ const user = useAuthenticatedUser();
 const router = useRouter()
 
 const formSchema = z.object({
-  role: z.string().nonempty(GeneralErrors.ROLE_REQUIRED_ERROR)
+  role: z.string().nullable()
+      .transform(val => val || '')
+      .refine(val => val.length > 0, {
+        message: GeneralErrors.ROLE_REQUIRED_ERROR
+      })
 });
 
 type FormSchemaType = z.infer<typeof formSchema>;
