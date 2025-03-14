@@ -3,14 +3,11 @@ import './style.css'
 import App from './App.vue'
 import PrimeVue from "primevue/config";
 import Aura from '@primeuix/themes/aura'
-import {router} from "./router.ts";
-import {VueFire, VueFireAuth} from "vuefire";
-import {getFirebaseApp} from "./firebase/app.ts";
-
-const { firebaseApp } = getFirebaseApp;
+import {index} from "./router";
+import { VueQueryPlugin } from '@tanstack/vue-query'
 
 const app = createApp(App);
-app.use(router);
+app.use(index);
 app.use(PrimeVue, {
     theme: {
         preset: Aura,
@@ -19,10 +16,5 @@ app.use(PrimeVue, {
         }
     }
 });
-app.use(VueFire, {
-    firebaseApp,
-    modules: [
-        VueFireAuth()
-    ]
-});
+app.use(VueQueryPlugin)
 app.mount("#app");

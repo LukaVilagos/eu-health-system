@@ -1,6 +1,5 @@
 import {computed, effectScope, ref} from 'vue';
 import {auth, db, onAuthStateChanged, provider, signInWithPopup, signOut as firebaseSignOut} from "../firebase/app";
-import {getCurrentUser} from "vuefire";
 import type {User} from 'firebase/auth';
 import {doc, getDoc} from "firebase/firestore";
 import {useRouter} from 'vue-router';
@@ -39,10 +38,12 @@ export function useAuth() {
     }
 
     function setupAuthStateListener() {
-        getCurrentUser().catch(err => {
-            state.value.error = err instanceof Error ? err : new Error('Error getting current user');
+        if (auth.currentUser) {
+            state.value.user = auth.currentUser;
             state.value.isLoading = false;
-        });
+        } else {
+            state.value.isLoading = true;
+        }
 
         return onAuthStateChanged(auth, (currentUser) => {
             state.value.user = currentUser;
@@ -66,7 +67,7 @@ export function useAuth() {
             if (!userDoc.exists()) {
                 await router.push({name: 'RoleSelection'});
             } else {
-                await router.push({name: 'Home'});
+                await router.push({name: 'Home', params: {userId: userDoc.data().uid}});
             }
         });
     }
@@ -81,8 +82,20 @@ export function useAuth() {
         });
     }
 
-    async function getCurrentlySignedInUser() {
-        return await getCurrentUser();
+    async function getCurrentlySignedInUser(): Promise<User | null> {
+        return new Promise((resolve) => {
+            if (!state.value.isLoading) {
+                return resolve(state.value.user);
+            }
+
+            const unsubscribe = onAuthStateChanged(auth, (user) => {
+                unsubscribe();
+                resolve(user);
+            }, () => {
+                unsubscribe();
+                resolve(null);
+            });
+        });
     }
 
     const cleanup = () => {

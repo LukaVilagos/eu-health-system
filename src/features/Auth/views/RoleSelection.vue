@@ -1,14 +1,14 @@
 <script lang="ts" setup>
 import {Button, Card, Message, Select} from "primevue";
 import {Form} from "@primevue/forms";
-import PageWrapper from "../components/library/PageWrapper.vue";
+import PageWrapper from "../../../components/ui/PageWrapper.vue";
 import {reactive, ref} from "vue";
 import {zodResolver} from "@primevue/forms/resolvers/zod"
-import {assignRoleAndCreateUserDocument} from "../models/User.ts";
+import {assignRoleAndCreateUserDocument, UserRoles} from "../../../models/User.ts";
 import {useRouter} from "vue-router";
 import {z} from "zod";
-import {GeneralErrors} from "../constants/errors.ts";
-import {useAuthenticatedUser} from "../composables/useAuthGuard.ts";
+import {GeneralErrors} from "../../../constants/errors.ts";
+import {useAuthenticatedUser} from "../../../composables/useAuthGuard.ts";
 
 const user = useAuthenticatedUser();
 const router = useRouter()
@@ -28,7 +28,7 @@ const resolver = ref(zodResolver(formSchema));
 async function onFormSubmit() {
   try {
     await assignRoleAndCreateUserDocument(user, formValues.role);
-    await router.push({name: 'Home'});
+    await router.push({name: 'Home', params: {userId: user.uid}});
   } catch (error) {
     console.error("Error creating user document:", error);
   }
@@ -45,7 +45,7 @@ async function onFormSubmit() {
       <template #content>
         <Form v-slot="$form" v-model="formValues" :resolver class="flex flex-col gap-4 w-full sm:w-56"
               @submit="onFormSubmit">
-          <Select v-model="formValues.role" :options="['Doctor', 'Patient']" fluid name="role" placeholder="Select Role"
+          <Select v-model="formValues.role" :options="Object.values(UserRoles)" fluid name="role" placeholder="Select Role"
                   required/>
           <Message v-if="$form.role?.invalid" severity="error" size="small" variant="simple">{{
               $form.role.error.message

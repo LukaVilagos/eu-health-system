@@ -5,5 +5,5 @@
 </template>
 
 <script setup lang="ts">
-import AuthProvider from "./providers/AuthProvider.vue";
+import AuthProvider from "./features/Auth/components/AuthProvider.vue";
 </script>

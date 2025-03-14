@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 
 import Auth from "../components/Auth.vue";
-import PageWrapper from "../components/library/PageWrapper.vue";
+import PageWrapper from "../../../components/ui/PageWrapper.vue";
 </script>
 
 <template>

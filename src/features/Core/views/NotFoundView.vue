@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import {Card} from "primevue"
-import PageWrapper from "../components/library/PageWrapper.vue";
+import PageWrapper from "../../../components/ui/PageWrapper.vue";
 </script>
 
 <template>

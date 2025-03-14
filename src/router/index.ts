@@ -1,13 +1,13 @@
-import HomeView from "./views/HomeView.vue";
+import HomeView from "../features/Home/views/HomeView.vue";
 import {createRouter, createWebHistory, type RouteRecordRaw} from "vue-router";
-import SignIn from "./views/SignIn.vue";
-import ForbiddenView from "./views/ForbiddenView.vue";
-import NotFoundView from "./views/NotFoundView.vue";
-import {useAuth} from "./composables/useAuth.ts";
-import RoleSelection from "./views/RoleSelection.vue";
+import SignIn from "../features/Auth/views/SignIn.vue";
+import ForbiddenView from "../features/Core/views/ForbiddenView.vue";
+import NotFoundView from "../features/Core/views/NotFoundView.vue";
+import {useAuth} from "../composables/useAuth.ts";
+import RoleSelection from "../features/Auth/views/RoleSelection.vue";
 import {doc, getDoc} from "firebase/firestore";
-import {db} from "./firebase/app.ts";
-import {USER_COLLECTION_NAME} from "./models/User.ts";
+import {db} from "../firebase/app.ts";
+import {USER_COLLECTION_NAME} from "../models/User.ts";
 
 const protectRouteMeta = {
     isProtected: true
@@ -36,18 +36,18 @@ const routes: Readonly<RouteRecordRaw[]> = [{
 }, {
     path: '/role-selector', component: RoleSelection, name: 'RoleSelection', meta: protectRouteMeta,
 }, {
-    path: '/home', component: HomeView, name: 'Home', meta: protectRouteMeta
+    path: '/home/:userId', component: HomeView, name: 'Home', meta: protectRouteMeta
 }, {
     path: '/forbidden', component: ForbiddenView, name: 'Forbidden', meta: unprotectRouteMeta,
 }, {
     path: '/:pathMatch(.*)*', component: NotFoundView, name: 'NotFound', meta: unprotectRouteMeta,
 }]
 
-export const router = createRouter({
+export const index = createRouter({
     history: createWebHistory(), routes
 })
 
-router.beforeEach(async (to, _from) => {
+index.beforeEach(async (to, _from) => {
     const { user, getCurrentlySignedInUser } = useAuth();
 
     const currentUser = user?.value ?? await getCurrentlySignedInUser();
@@ -68,7 +68,7 @@ router.beforeEach(async (to, _from) => {
     }
 
     if (to.meta.isGuestRoute && currentUser) {
-        return { name: 'Home' };
+        return {name: 'Home', params: {userId: currentUser.uid}};
     }
 
     return true;

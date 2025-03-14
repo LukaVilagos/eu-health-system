@@ -1,17 +1,21 @@
 import {z} from "zod";
-import {GeneralErrors} from "../constants/errors.ts";
 import {doc, getDoc, setDoc} from "firebase/firestore";
 import {db} from "../firebase/app.ts";
 import type {User} from 'firebase/auth';
 
 export const USER_COLLECTION_NAME = 'users';
 
+export enum UserRoles {
+    DOCTOR = 'Doctor',
+    PATIENT = 'Patient'
+}
+
 export const UserSchema = z.object({
     uid: z.string().nonempty(),
     email: z.string().email().nullable(),
     displayName: z.string().nullable(),
     photoURL: z.string().nullable(),
-    role: z.string().nonempty(GeneralErrors.ROLE_REQUIRED_ERROR),
+    role: z.nativeEnum(UserRoles),
     createdAt: z.date()
 });
 
