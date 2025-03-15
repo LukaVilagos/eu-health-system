@@ -5,7 +5,8 @@ export type AppRouteName =
   | "RoleSelection"
   | "Home"
   | "Forbidden"
-  | "NotFound";
+  | "NotFound"
+  | "Todo";
 
 export interface RouteParamsMap {
   SignIn: Record<string, never>;
@@ -15,18 +16,19 @@ export interface RouteParamsMap {
   };
   Forbidden: Record<string, never>;
   NotFound: Record<string, never>;
+  Todo: {
+    todoId: string;
+  };
 }
 
 export type ParamsFor<RouteName extends AppRouteName> =
   RouteParamsMap[RouteName];
 
-// Type-safe navigation function signatures
 export interface TypedRouteLocation {
   name: AppRouteName;
   params?: RouteParams;
 }
 
-// A more specific version that enforces correct params for each route
 export type TypedRouteLocationWithParams<T extends AppRouteName> = {
   name: T;
   params: ParamsFor<T>;

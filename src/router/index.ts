@@ -14,6 +14,7 @@ import { authGuard, guestGuard, roleSelectionGuard } from "./guards.ts";
 import AuthLayout from "../components/layout/AuthLayout.vue";
 import DefaultLayout from "../components/layout/DefaultLayout.vue";
 import BlankLayout from "../components/layout/BlankLayout.vue";
+import Todo from "../features/Todos/views/Todo.vue";
 
 const protectRouteMeta = {
   isProtected: true,
@@ -64,6 +65,13 @@ const routes: Readonly<RouteRecordRaw[]> = [
         path: "home/:userId",
         component: HomeView,
         name: "Home" as AppRouteName,
+        meta: protectRouteMeta,
+        props: true,
+      },
+      {
+        path: "todo/:todoId",
+        component: Todo,
+        name: "Todo" as AppRouteName,
         meta: protectRouteMeta,
         props: true,
       },

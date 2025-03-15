@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/vue-query";
-import { getAllTodos } from "../models/Todo.ts";
+import { getAllTodos, getTodoById } from "../models/Todo.ts";
 
 export const todoKeys = {
   all: ["todos"] as const,
@@ -13,5 +13,12 @@ export function useTodosQuery() {
   return useQuery({
     queryKey: todoKeys.all,
     queryFn: getAllTodos,
+  });
+}
+
+export function useTodoQuery(id: string) {
+  return useQuery({
+    queryKey: todoKeys.detail(id),
+    queryFn: () => getTodoById(id),
   });
 }
