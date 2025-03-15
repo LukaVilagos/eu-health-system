@@ -1,34 +1,37 @@
 <script lang="ts" setup>
-import {Button, Card, Message, Select} from "primevue";
-import {Form} from "@primevue/forms";
+import { Button, Card, Message, Select } from "primevue";
+import { Form } from "@primevue/forms";
 import PageWrapper from "../../../components/ui/PageWrapper.vue";
-import {reactive, ref} from "vue";
-import {zodResolver} from "@primevue/forms/resolvers/zod"
-import {assignRoleAndCreateUserDocument, UserRoles} from "../../../models/User.ts";
-import {useRouter} from "vue-router";
-import {z} from "zod";
-import {GeneralErrors} from "../../../constants/errors.ts";
-import {useAuthenticatedUser} from "../../../composables/useAuthGuard.ts";
+import { reactive, ref } from "vue";
+import { zodResolver } from "@primevue/forms/resolvers/zod"
+import { assignRoleAndCreateUserDocument, UserRoles } from "../../../models/User.ts";
+import { z } from "zod";
+import { GeneralErrors } from "../../../constants/errors.ts";
+import { useAuthenticatedUser } from "../../../composables/useAuthGuard.ts";
+import { useTypedRouter } from "../../../composables/useTypedRouter.ts";
 
 const user = useAuthenticatedUser();
-const router = useRouter()
+const router = useTypedRouter()
 
 const formSchema = z.object({
   role: z.string().nullable()
-      .transform(val => val || '')
-      .refine(val => val.length > 0, {
-        message: GeneralErrors.ROLE_REQUIRED_ERROR
-      })
+    .transform(val => val || '')
+    .refine(val => val.length > 0, {
+      message: GeneralErrors.ROLE_REQUIRED_ERROR
+    })
 });
 
 type FormSchemaType = z.infer<typeof formSchema>;
-const formValues = reactive<FormSchemaType>({role: ''});
+const formValues = reactive<FormSchemaType>({ role: '' });
 const resolver = ref(zodResolver(formSchema));
 
 async function onFormSubmit() {
   try {
     await assignRoleAndCreateUserDocument(user, formValues.role);
-    await router.push({name: 'Home', params: {userId: user.uid}});
+    await router.typedPush({
+      name: 'Home',
+      params: { userId: user.uid }
+    });
   } catch (error) {
     console.error("Error creating user document:", error);
   }
@@ -44,20 +47,18 @@ async function onFormSubmit() {
       />
       <template #content>
         <Form v-slot="$form" v-model="formValues" :resolver class="flex flex-col gap-4 w-full sm:w-56"
-              @submit="onFormSubmit">
-          <Select v-model="formValues.role" :options="Object.values(UserRoles)" fluid name="role" placeholder="Select Role"
-                  required/>
+          @submit="onFormSubmit">
+          <Select v-model="formValues.role" :options="Object.values(UserRoles)" fluid name="role"
+            placeholder="Select Role" required />
           <Message v-if="$form.role?.invalid" severity="error" size="small" variant="simple">{{
-              $form.role.error.message
-            }}
+            $form.role.error.message
+          }}
           </Message>
-          <Button label="Submit" severity="primary" type="submit"/>
+          <Button label="Submit" severity="primary" type="submit" />
         </Form>
       </template>
     </Card>
   </PageWrapper>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

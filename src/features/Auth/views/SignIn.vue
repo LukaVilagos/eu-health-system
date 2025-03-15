@@ -6,10 +6,8 @@ import PageWrapper from "../../../components/ui/PageWrapper.vue";
 
 <template>
   <PageWrapper>
-    <Auth/>
+    <Auth />
   </PageWrapper>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

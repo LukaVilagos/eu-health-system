@@ -1,25 +1,28 @@
 import HomeView from "../features/Home/views/HomeView.vue";
-import {createRouter, createWebHistory, type RouteRecordRaw} from "vue-router";
+import {
+  createRouter,
+  createWebHistory,
+  type RouteRecordRaw,
+} from "vue-router";
 import SignIn from "../features/Auth/views/SignIn.vue";
 import ForbiddenView from "../features/Core/views/ForbiddenView.vue";
 import NotFoundView from "../features/Core/views/NotFoundView.vue";
-import {useAuth} from "../composables/useAuth.ts";
+import { useAuth } from "../composables/useAuth.ts";
 import RoleSelection from "../features/Auth/views/RoleSelection.vue";
-import {doc, getDoc} from "firebase/firestore";
-import {db} from "../firebase/app.ts";
-import {USER_COLLECTION_NAME} from "../models/User.ts";
+import type { AppRouteName } from "./routeTypes";
+import { authGuard, guestGuard, roleSelectionGuard } from "./guards.ts";
 
 const protectRouteMeta = {
-    isProtected: true
-}
+  isProtected: true,
+};
 
 const guestRouteMeta = {
-    isGuestRoute: true,
-}
+  isGuestRoute: true,
+};
 
 const unprotectRouteMeta = {
-    isProtected: false
-}
+  isProtected: false,
+};
 
 /*
 const patientRouteMeta = {
@@ -31,45 +34,63 @@ const doctorRouteMeta = {
 }
 */
 
-const routes: Readonly<RouteRecordRaw[]> = [{
-    path: '/', component: SignIn, name: 'SignIn', meta: {...unprotectRouteMeta, ...guestRouteMeta}
-}, {
-    path: '/role-selector', component: RoleSelection, name: 'RoleSelection', meta: protectRouteMeta,
-}, {
-    path: '/home/:userId', component: HomeView, name: 'Home', meta: protectRouteMeta
-}, {
-    path: '/forbidden', component: ForbiddenView, name: 'Forbidden', meta: unprotectRouteMeta,
-}, {
-    path: '/:pathMatch(.*)*', component: NotFoundView, name: 'NotFound', meta: unprotectRouteMeta,
-}]
+const routes: Readonly<RouteRecordRaw[]> = [
+  {
+    path: "/",
+    component: SignIn,
+    name: "SignIn" as AppRouteName,
+    meta: { ...unprotectRouteMeta, ...guestRouteMeta },
+  },
+  {
+    path: "/role-selector",
+    component: RoleSelection,
+    name: "RoleSelection" as AppRouteName,
+    meta: protectRouteMeta,
+  },
+  {
+    path: "/home/:userId",
+    component: HomeView,
+    name: "Home" as AppRouteName,
+    meta: protectRouteMeta,
+    props: true,
+  },
+  {
+    path: "/forbidden",
+    component: ForbiddenView,
+    name: "Forbidden" as AppRouteName,
+    meta: unprotectRouteMeta,
+  },
+  {
+    path: "/:pathMatch(.*)*",
+    component: NotFoundView,
+    name: "NotFound" as AppRouteName,
+    meta: unprotectRouteMeta,
+  },
+];
 
-export const index = createRouter({
-    history: createWebHistory(), routes
-})
+export const router = createRouter({
+  history: createWebHistory(),
+  routes,
+});
 
-index.beforeEach(async (to, _from) => {
-    const { user, getCurrentlySignedInUser } = useAuth();
+router.beforeEach(async (to, _from) => {
+  const { user, getCurrentlySignedInUser } = useAuth();
+  const currentUser = user?.value ?? (await getCurrentlySignedInUser());
 
-    const currentUser = user?.value ?? await getCurrentlySignedInUser();
-
-    if (to.name === 'RoleSelection') {
-        if (currentUser) {
-            const userDocRef = doc(db, USER_COLLECTION_NAME, currentUser.uid);
-            const userDoc = await getDoc(userDocRef);
-
-            if (userDoc.exists() && userDoc.data().role) {
-                return { name: 'Home' };
-            }
-        }
+  if (!currentUser) {
+    if (to.meta.isProtected) {
+      return { name: "SignIn" };
     }
+  }
 
-    if (to.meta.isProtected && !currentUser) {
-        return { name: 'Forbidden' };
-    }
+  const roleGuardResult = await roleSelectionGuard(to, currentUser);
+  if (roleGuardResult !== true) return roleGuardResult;
 
-    if (to.meta.isGuestRoute && currentUser) {
-        return {name: 'Home', params: {userId: currentUser.uid}};
-    }
+  const authGuardResult = authGuard(to, currentUser);
+  if (authGuardResult !== true) return authGuardResult;
 
-    return true;
+  const guestGuardResult = guestGuard(to, currentUser);
+  if (guestGuardResult !== true) return guestGuardResult;
+
+  return true;
 });

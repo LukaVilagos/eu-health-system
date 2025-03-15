@@ -1,23 +1,15 @@
 <script lang="ts" setup>
-import {Button, Card, OrderList} from "primevue";
-import {useAuthGuard} from "../../../composables/useAuthGuard.ts";
-import {getUserDocument, type UserSchemaType} from "../../../models/User.ts";
-import {onMounted, ref} from "vue";
-import {useTodosQuery} from "../../../queries/queryTodo.ts";
-import {useRoute} from "vue-router";
+import { Button, Card, OrderList } from "primevue";
+import { useAuthGuard } from "../../../composables/useAuthGuard.ts";
+import { useTodosQuery } from "../../../queries/queryTodo.ts";
+import { useRoute } from "vue-router";
+import { useUserQuery } from "../../../queries/queryUser.ts";
 
-const {signOut} = useAuthGuard();
+const { signOut } = useAuthGuard();
 const route = useRoute();
 
-const userData = ref<UserSchemaType | null>(null);
+const { data: userData } = useUserQuery(route.params.userId as string);
 const { data: todos } = useTodosQuery();
-
-onMounted(async () => {
-  if (!route.params.userId) {
-    return;
-  }
-  userData.value = await getUserDocument(route.params.userId as string);
-});
 
 </script>
 
@@ -31,7 +23,7 @@ onMounted(async () => {
           {{ option.text }}
         </template>
       </OrderList>
-      <Button label="Sign out" @click="signOut"/>
+      <Button label="Sign out" @click="signOut" />
     </template>
     <template #footer>footer</template>
   </Card>

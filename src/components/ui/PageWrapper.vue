@@ -4,10 +4,8 @@
 
 <template>
   <main class="p-4">
-    <slot/>
+    <slot />
   </main>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>
