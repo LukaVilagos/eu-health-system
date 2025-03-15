@@ -1,30 +1,39 @@
 <script lang="ts" setup>
-import { Button, Card, OrderList } from "primevue";
-import { useAuthGuard } from "../../../composables/useAuthGuard.ts";
+import { Card, DataTable, Column, Button } from "primevue";
 import { useTodosQuery } from "../../../queries/queryTodo.ts";
-import { useRoute } from "vue-router";
-import { useUserQuery } from "../../../queries/queryUser.ts";
+import { ref } from "vue";
+import CreateTodo from "./CreateTodo.vue";
+import { createTodo, type CreateTodoSchemaType } from "../../../models/Todo.ts";
 
-const { signOut } = useAuthGuard();
-const route = useRoute();
+const { data: todos, refetch } = useTodosQuery();
+const visible = ref(false);
 
-const { data: userData } = useUserQuery(route.params.userId as string);
-const { data: todos } = useTodosQuery();
+const hideDialog = () => {
+  visible.value = false;
+};
 
+async function handleTodoCreated(todoData: CreateTodoSchemaType) {
+  await createTodo(todoData.text);
+  await refetch();
+  hideDialog();
+};
 </script>
 
 <template>
   <Card>
     <template #title>TODO LIST</template>
-    <template #subtitle v-if="userData">{{ userData?.displayName }} : {{ userData?.role }}</template>
     <template #content>
-      <OrderList v-if="todos" v-model="todos" breakpoint="575px" dataKey="id" pt:pcListbox:root="w-full sm:w-56">
-        <template #option="{ option }">
-          {{ option.text }}
+      <DataTable :value="todos" :paginator="true" :rows="10" :rowsPerPageOptions="[5, 10, 20]">
+        <template #header>
+          <div class="flex justify-end">
+            <Button label="Add" icon="pi pi-plus" class="p-button-sm p-button-outlined" @click="visible = true" />
+          </div>
         </template>
-      </OrderList>
-      <Button label="Sign out" @click="signOut" />
+        <Column field="id" header="ID" class=" w-28"></Column>
+        <Column field="text" header="Text" sortable></Column>
+      </DataTable>
     </template>
-    <template #footer>footer</template>
   </Card>
+
+  <CreateTodo :visible="visible" @close="hideDialog" @submit="handleTodoCreated" />
 </template>

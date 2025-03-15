@@ -1,4 +1,4 @@
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../firebase/app.ts";
 import { z } from "zod";
 
@@ -9,7 +9,12 @@ export const TodoSchema = z.object({
   text: z.string(),
 });
 
+const createTodoSchema = z.object({
+  text: z.string().nonempty(),
+});
+
 export type TodoSchemaType = z.infer<typeof TodoSchema>;
+export type CreateTodoSchemaType = z.infer<typeof createTodoSchema>;
 
 export async function getAllTodos(): Promise<TodoSchemaType[]> {
   try {
@@ -30,4 +35,10 @@ export async function getAllTodos(): Promise<TodoSchemaType[]> {
     console.error("Error fetching todos:", error);
     return [];
   }
+}
+
+export async function createTodo(text: string) {
+  const validatedData = createTodoSchema.parse({ text });
+  const todosCollectionRef = collection(db, TODO_COLLECTION_NAME);
+  return await addDoc(todosCollectionRef, validatedData);
 }

@@ -60,5 +60,3 @@ async function onFormSubmit() {
     </Card>
   </PageWrapper>
 </template>
-
-<style scoped></style>
