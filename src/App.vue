@@ -1,6 +1,6 @@
 <template>
   <AuthProvider>
-    <RouterView/>
+    <RouterView />
   </AuthProvider>
 </template>
 

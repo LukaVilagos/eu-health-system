@@ -11,9 +11,6 @@ app.use(router);
 app.use(PrimeVue, {
   theme: {
     preset: Aura,
-    options: {
-      darkMode: false,
-    },
   },
 });
 app.use(VueQueryPlugin);

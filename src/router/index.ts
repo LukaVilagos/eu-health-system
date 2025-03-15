@@ -11,6 +11,9 @@ import { useAuth } from "../composables/useAuth.ts";
 import RoleSelection from "../features/Auth/views/RoleSelection.vue";
 import type { AppRouteName } from "./routeTypes";
 import { authGuard, guestGuard, roleSelectionGuard } from "./guards.ts";
+import AuthLayout from "../components/layout/AuthLayout.vue";
+import DefaultLayout from "../components/layout/DefaultLayout.vue";
+import BlankLayout from "../components/layout/BlankLayout.vue";
 
 const protectRouteMeta = {
   isProtected: true,
@@ -37,34 +40,52 @@ const doctorRouteMeta = {
 const routes: Readonly<RouteRecordRaw[]> = [
   {
     path: "/",
-    component: SignIn,
-    name: "SignIn" as AppRouteName,
-    meta: { ...unprotectRouteMeta, ...guestRouteMeta },
+    component: AuthLayout,
+    children: [
+      {
+        path: "",
+        component: SignIn,
+        name: "SignIn" as AppRouteName,
+        meta: { ...unprotectRouteMeta, ...guestRouteMeta },
+      },
+      {
+        path: "role-selector",
+        component: RoleSelection,
+        name: "RoleSelection" as AppRouteName,
+        meta: { ...unprotectRouteMeta },
+      },
+    ],
   },
   {
-    path: "/role-selector",
-    component: RoleSelection,
-    name: "RoleSelection" as AppRouteName,
-    meta: protectRouteMeta,
+    path: "/",
+    component: DefaultLayout,
+    children: [
+      {
+        path: "home/:userId",
+        component: HomeView,
+        name: "Home" as AppRouteName,
+        meta: protectRouteMeta,
+        props: true,
+      },
+    ],
   },
   {
-    path: "/home/:userId",
-    component: HomeView,
-    name: "Home" as AppRouteName,
-    meta: protectRouteMeta,
-    props: true,
-  },
-  {
-    path: "/forbidden",
-    component: ForbiddenView,
-    name: "Forbidden" as AppRouteName,
-    meta: unprotectRouteMeta,
-  },
-  {
-    path: "/:pathMatch(.*)*",
-    component: NotFoundView,
-    name: "NotFound" as AppRouteName,
-    meta: unprotectRouteMeta,
+    path: "/",
+    component: BlankLayout,
+    children: [
+      {
+        path: "/forbidden",
+        component: ForbiddenView,
+        name: "Forbidden" as AppRouteName,
+        meta: { ...protectRouteMeta },
+      },
+      {
+        path: "/:pathMatch(.*)*",
+        component: NotFoundView,
+        name: "NotFound" as AppRouteName,
+        meta: { ...unprotectRouteMeta },
+      },
+    ],
   },
 ];
 
