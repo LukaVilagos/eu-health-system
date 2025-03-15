@@ -15,6 +15,7 @@ import AuthLayout from "../components/layout/AuthLayout.vue";
 import DefaultLayout from "../components/layout/DefaultLayout.vue";
 import BlankLayout from "../components/layout/BlankLayout.vue";
 import Todo from "../features/Todos/views/Todo.vue";
+import ProfileView from "../features/Profile/views/ProfileView.vue";
 
 const protectRouteMeta = {
   isProtected: true,
@@ -72,6 +73,13 @@ const routes: Readonly<RouteRecordRaw[]> = [
         path: "todo/:todoId",
         component: Todo,
         name: "Todo" as AppRouteName,
+        meta: protectRouteMeta,
+        props: true,
+      },
+      {
+        path: "profile/:userId",
+        component: ProfileView,
+        name: "Profile" as AppRouteName,
         meta: protectRouteMeta,
         props: true,
       },

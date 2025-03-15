@@ -28,6 +28,7 @@ const profileMenuItems = ref([
     {
         label: 'Profile',
         icon: 'pi pi-user',
+        command: () => router.typedPush({ name: "Profile", params: { userId: user.uid } })
     },
     {
         label: 'Sign Out',

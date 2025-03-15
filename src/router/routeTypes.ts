@@ -6,7 +6,8 @@ export type AppRouteName =
   | "Home"
   | "Forbidden"
   | "NotFound"
-  | "Todo";
+  | "Todo"
+  | "Profile";
 
 export interface RouteParamsMap {
   SignIn: Record<string, never>;
@@ -18,6 +19,9 @@ export interface RouteParamsMap {
   NotFound: Record<string, never>;
   Todo: {
     todoId: string;
+  };
+  Profile: {
+    userId: string;
   };
 }
 
