@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { Button, ProgressSpinner } from "primevue";
+import { Button, ProgressSpinner } from "primevue"
 import { useAuth } from "../../../composables/useAuth.ts";
 
 const { user, isLoading, signIn } = useAuth()

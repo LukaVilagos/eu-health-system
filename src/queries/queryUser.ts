@@ -4,6 +4,8 @@ import {
   getUserDocument,
 } from "../models/User";
 import type { User } from "firebase/auth";
+import { useAuthStore } from "../stores/authStore";
+import { authKeys } from "./queryAuth";
 
 export const userKeys = {
   all: ["users"] as const,
@@ -23,11 +25,22 @@ export function useUserQuery(userId: string) {
 
 export function useAssignRoleAndCreateUserMutation() {
   const queryClient = useQueryClient();
+  const authStore = useAuthStore();
+
   return useMutation({
-    mutationFn: ({ user, role }: { user: User; role: string }) =>
-      assignRoleAndCreateUserDocument(user, role),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: userKeys.all });
+    mutationFn: async ({ user, role }: { user: User; role: string }) => {
+      await assignRoleAndCreateUserDocument(user, role);
+      await authStore.fetchUserDocument(user.uid);
+      await queryClient.invalidateQueries({ queryKey: authKeys.user });
+      await queryClient.prefetchQuery({
+        queryKey: authKeys.user,
+        queryFn: async () => authStore.user,
+        staleTime: 0,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: userKeys.all });
+
+      return { success: true };
     },
   });
 }

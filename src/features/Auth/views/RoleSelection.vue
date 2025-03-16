@@ -11,7 +11,6 @@ import { useTypedRouter } from "../../../composables/useTypedRouter.ts";
 import { useAssignRoleAndCreateUserMutation } from "../../../queries/queryUser.ts";
 import { useAuthUser } from "../../../composables/useAuth.ts";
 
-// Replace async function call with reactive composable
 const { user, isLoading } = useAuthUser();
 const router = useTypedRouter()
 
@@ -27,7 +26,7 @@ type FormSchemaType = z.infer<typeof formSchema>;
 const formValues = reactive<FormSchemaType>({ role: '' });
 const resolver = ref(zodResolver(formSchema));
 
-const { mutate: assignRoleAndCreateUserDocumentMutation } = useAssignRoleAndCreateUserMutation();
+const { mutateAsync: assignRoleAndCreateUserDocumentMutation, isPending } = useAssignRoleAndCreateUserMutation();
 
 async function onFormSubmit() {
   try {
@@ -35,7 +34,15 @@ async function onFormSubmit() {
       throw new Error("User is not authenticated");
     }
 
-    assignRoleAndCreateUserDocumentMutation({ user: user.value, role: formValues.role });
+    if (!formValues.role) {
+      return;
+    }
+
+    await assignRoleAndCreateUserDocumentMutation({
+      user: user.value,
+      role: formValues.role
+    });
+
     await router.typedPush({
       name: 'Home',
       params: {}
@@ -54,7 +61,7 @@ async function onFormSubmit() {
       <template #subtitle>Select your role</template>
       />
       <template #content>
-        <div v-if="isLoading" class="flex justify-center">
+        <div v-if="isLoading || isPending" class="flex justify-center">
           <i class="pi pi-spin pi-spinner text-2xl"></i>
         </div>
         <Form v-else v-slot="$form" v-model="formValues" :resolver class="flex flex-col gap-4 w-full sm:w-56"
@@ -65,7 +72,7 @@ async function onFormSubmit() {
             $form.role.error.message
           }}
           </Message>
-          <Button label="Submit" severity="primary" type="submit" />
+          <Button label="Submit" severity="primary" type="submit" :disabled="isPending" />
         </Form>
       </template>
     </Card>
