@@ -34,6 +34,13 @@ const handleTodoCreated = () => {
     hideCreateDialog();
     refetch();
 };
+
+defineProps({
+    userId: {
+        type: String,
+        required: true
+    }
+});
 </script>
 
 <template>

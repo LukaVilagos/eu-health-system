@@ -48,6 +48,7 @@ export const TodoSchema = z.object({
   text: z.string(),
   userId: z.string(),
   access: AccessControlSchema.default({}),
+  viewerIds: z.array(z.string()).default([]),
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
 });
@@ -130,6 +131,7 @@ export async function getAllTodos(): Promise<TodoWithUserSchemaType[]> {
         text: data.text,
         userId: data.userId,
         access: access,
+        viewerIds: data.viewerIds || [],
         createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
         updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
       };
@@ -176,6 +178,7 @@ export async function getTodosByUserId(
         text: data.text,
         userId: data.userId,
         access: access,
+        viewerIds: data.viewerIds || [],
         createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
         updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
       };
@@ -222,6 +225,7 @@ export async function getTodoById(
       text: data.text,
       userId: data.userId,
       access: access,
+      viewerIds: data.viewerIds || [],
       createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
       updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
     };
@@ -242,6 +246,7 @@ export async function createTodo(text: string, userId: string) {
     text,
     userId,
     access: {},
+    viewerIds: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -273,7 +278,9 @@ export async function grantTodoPermission(
     throw new Error("Todo not found");
   }
 
-  const accessUpdate = {
+  const todoData = todoDoc.data();
+  const currentViewerIds = todoData.viewerIds || [];
+  const updateData: Record<string, any> = {
     [`access.${targetUserId}`]: {
       permissions,
       addedAt: new Date(),
@@ -281,7 +288,13 @@ export async function grantTodoPermission(
     },
   };
 
-  await updateDoc(todoRef, accessUpdate);
+  if (permissions.includes(PermissionLevel.VIEW)) {
+    if (!currentViewerIds.includes(targetUserId)) {
+      updateData.viewerIds = [...currentViewerIds, targetUserId];
+    }
+  }
+
+  await updateDoc(todoRef, updateData);
 }
 
 export async function revokeTodoPermission(
@@ -289,10 +302,24 @@ export async function revokeTodoPermission(
   userId: string
 ): Promise<void> {
   const todoRef = doc(db, TODO_COLLECTION_NAME, todoId);
+  const todoDoc = await getDoc(todoRef);
 
-  await updateDoc(todoRef, {
+  if (!todoDoc.exists()) {
+    throw new Error("Todo not found");
+  }
+
+  const todoData = todoDoc.data();
+  const updateData: Record<string, any> = {
     [`access.${userId}`]: deleteField(),
-  });
+  };
+
+  if (todoData.viewerIds && todoData.viewerIds.includes(userId)) {
+    updateData.viewerIds = todoData.viewerIds.filter(
+      (id: string) => id !== userId
+    );
+  }
+
+  await updateDoc(todoRef, updateData);
 }
 
 export async function createTodoWithPermissions(
@@ -301,6 +328,7 @@ export async function createTodoWithPermissions(
   sharedWith: Record<string, PermissionSchemaType> = {}
 ): Promise<DocumentReference> {
   const access: Record<string, any> = {};
+  const viewerIds: string[] = [];
 
   Object.entries(sharedWith).forEach(([userId, permissions]) => {
     access[userId] = {
@@ -308,6 +336,10 @@ export async function createTodoWithPermissions(
       addedAt: new Date(),
       addedBy: creatorId,
     };
+
+    if (permissions.permissions.includes(PermissionLevel.VIEW)) {
+      viewerIds.push(userId);
+    }
   });
 
   createTodoSchema.parse({ text, userId: creatorId });
@@ -316,6 +348,7 @@ export async function createTodoWithPermissions(
     text,
     userId: creatorId,
     access,
+    viewerIds,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -329,7 +362,11 @@ export async function getTodosSharedWithUser(
 ): Promise<TodoWithUserSchemaType[]> {
   try {
     const todosCollectionRef = collection(db, TODO_COLLECTION_NAME);
-    const q = query(todosCollectionRef, where("userId", "!=", userId));
+    const q = query(
+      todosCollectionRef,
+      where("viewerIds", "array-contains", userId),
+      where("userId", "!=", userId)
+    );
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
@@ -356,22 +393,13 @@ export async function getTodosSharedWithUser(
         text: data.text,
         userId: data.userId,
         access: access,
+        viewerIds: data.viewerIds || [],
         createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
         updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
       };
     });
 
-    const sharedTodos = todos.filter(
-      (todo) =>
-        todo.access &&
-        todo.access[userId] &&
-        todo.access[userId].permissions &&
-        todo.access[userId].permissions.includes(PermissionLevel.VIEW)
-    );
-
-    const todosWithValidation = sharedTodos.map((todo) =>
-      TodoSchema.parse(todo)
-    );
+    const todosWithValidation = todos.map((todo) => TodoSchema.parse(todo));
     return await enhanceWithUserData(todosWithValidation);
   } catch (error) {
     console.error("Error fetching shared todos:", error);
