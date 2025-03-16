@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { Card, Skeleton, Button, InputText } from "primevue";
 import { useDeleteTodoMutation, useTodoQuery, useUpdateTodoMutation } from "../../../queries/queryTodo.ts";
-import { useRoute } from "vue-router";
+import { useTypedRoute } from "../../../router/useTypedRoute";
 import { useTypedRouter } from "../../../composables/useTypedRouter.ts";
 import { onMounted, ref, watch } from "vue";
 import { Form } from "@primevue/forms";
 
-const route = useRoute();
+const route = useTypedRoute<"Todo">();
 const router = useTypedRouter();
 
-const todoId = route.params.todoId;
-const { data: todo, isFetching } = useTodoQuery(todoId as string);
+const todoId = route.typedParams.todoId;
+const { data: todo, isFetching } = useTodoQuery(todoId);
 
 const editMode = ref(false);
 const todoText = ref("");
@@ -35,7 +35,7 @@ const { mutate: deleteTodoMutation } = useDeleteTodoMutation();
 const { mutate: updateTodoMutation, isPending: isUpdating } = useUpdateTodoMutation();
 
 async function handleDeleteTodo() {
-    deleteTodoMutation(todoId as string);
+    deleteTodoMutation(todoId);
     router.typedPush({ name: "Home", params: {} });
 }
 

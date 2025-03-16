@@ -4,8 +4,8 @@ import { useCreateTodoMutation, useDeleteTodoMutation, useTodosQuery } from "../
 import { ref } from "vue";
 import CreateTodo from "./CreateTodo.vue";
 import { type CreateTodoSchemaType, type TodoSchemaType } from "../../../models/Todo.ts";
-import { RouterLink } from "vue-router";
-
+import TypedRouterLink from "../../../components/TypedRouterLink.vue";
+import { createTypedLink } from "../../../router/useTypedRoute";
 
 const { data: todos, isLoading } = useTodosQuery();
 const visible = ref(false);
@@ -57,9 +57,12 @@ async function handleTodoCreated(todoData: CreateTodoSchemaType) {
             <div class="w-full flex justify-center gap-2 items-center">
               <Button icon=" pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
                 @click="handleDeleteTodo(data.id)" />
-              <RouterLink :to="{ name: 'Todo', params: { todoId: data.id } }">
+              <TypedRouterLink :to="createTypedLink({
+                name: 'Todo',
+                params: { todoId: data.id }
+              })">
                 <Button icon=" pi pi-pencil" class="p-button-rounded p-button-info p-button-sm" />
-              </RouterLink>
+              </TypedRouterLink>
             </div>
           </template>
         </Column>
