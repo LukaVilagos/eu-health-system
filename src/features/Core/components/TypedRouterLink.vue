@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
-import type { AppRouteName } from '../router/routeTypes';
-import type { TypedRouteLocationRaw } from '../router/useTypedRoute';
+import type { AppRouteName } from '../../../router/routeTypes';
+import type { TypedRouteLocationRaw } from '../../../composables/useTypedRoute';
 
 defineProps<{
     to: TypedRouteLocationRaw<AppRouteName>;

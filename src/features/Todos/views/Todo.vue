@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Card, Skeleton, Button, InputText } from "primevue";
 import { useDeleteTodoMutation, useTodoQuery, useUpdateTodoMutation } from "../../../queries/queryTodo.ts";
-import { useTypedRoute } from "../../../router/useTypedRoute";
+import { useTypedRoute } from "../../../composables/useTypedRoute.ts";
 import { useTypedRouter } from "../../../composables/useTypedRouter.ts";
 import { onMounted, ref, watch } from "vue";
 import { Form } from "@primevue/forms";

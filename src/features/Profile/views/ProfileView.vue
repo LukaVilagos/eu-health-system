@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTypedRoute } from '../../../router/useTypedRoute';
+import { useTypedRoute } from '../../../composables/useTypedRoute';
 import { useUserQuery } from '../../../queries/queryUser';
 import { Card, ProgressSpinner } from 'primevue';
 

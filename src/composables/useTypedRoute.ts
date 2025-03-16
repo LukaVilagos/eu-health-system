@@ -1,5 +1,5 @@
 import { useRoute, type RouteLocationNormalizedLoaded } from "vue-router";
-import type { AppRouteName, ParamsFor } from "./routeTypes";
+import type { AppRouteName, ParamsFor } from "../router/routeTypes";
 
 export function useTypedRoute<
   T extends AppRouteName
