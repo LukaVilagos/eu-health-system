@@ -1,13 +1,17 @@
 <script lang="ts" setup>
 import { Dialog, InputText, Message, Button } from "primevue";
 import { Form } from "@primevue/forms";
-import { defineEmits, ref } from "vue";
+import { defineEmits, defineProps, ref } from "vue";
 
-defineProps({
+const props = defineProps({
     visible: {
         type: Boolean,
         required: true,
     },
+    userId: {
+        type: String,
+        required: true,
+    }
 });
 
 const emit = defineEmits(["close", "submit"]);
@@ -15,7 +19,7 @@ const todoText = ref("");
 
 const onFormSubmit = () => {
     if (todoText.value) {
-        emit("submit", { text: todoText.value });
+        emit("submit", { text: todoText.value, userId: props.userId });
         todoText.value = "";
     }
 };

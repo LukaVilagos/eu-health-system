@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Avatar, Menu, Menubar } from "primevue";
+import { Avatar, Menu, Menubar, ProgressSpinner } from "primevue";
 import { computed, ref } from "vue";
 import { useAuth, useAuthUser } from "../../composables/useAuth";
 import type { MenuItem } from "primevue/menuitem";
@@ -46,9 +46,6 @@ const baseItems = ref<MenuItem[]>([
             params: {}
         })
     },
-    {
-        separator: true,
-    }
 ]);
 
 const items = computed<MenuItem[]>(() => {
@@ -94,8 +91,7 @@ const toggle = (event: any) => {
         </template>
         <template #end>
             <div v-if="isLoading" class="flex items-center p-2">
-                <i class="pi pi-spin pi-spinner mr-2"></i>
-                Loading...
+                <ProgressSpinner />
             </div>
             <button v-else-if="user" @click="toggle" aria-haspopup="true" aria-controls="overlay_menu"
                 class="overflow-hidden w-full border-0 bg-transparent flex items-center py-2 px-4 hover:bg-surface-100 dark:hover:bg-surface-800 rounded-md cursor-pointer transition-colors duration-200">
