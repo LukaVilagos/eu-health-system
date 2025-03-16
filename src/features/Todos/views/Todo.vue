@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Card, Skeleton, Button, InputText, Message } from "primevue";
+import { Card, Button, InputText, Message } from "primevue";
 import { useDeleteTodoMutation, useTodoQuery, useUpdateTodoMutation } from "../../../queries/queryTodo.ts";
 import { useTypedRoute } from "../../../composables/useTypedRoute.ts";
 import { useTypedRouter } from "../../../composables/useTypedRouter.ts";
@@ -8,6 +8,8 @@ import { Form } from "@primevue/forms";
 import { useAuthUser } from "../../../composables/useAuth.ts";
 import { canEditTodo, canDeleteTodo } from "../../../utils/todoPermissionHelpers.ts";
 import TodoPermissions from "../components/TodoPermissions.vue";
+import LoadingIndicator from "../../Core/components/LoadingIndicator.vue";
+import UserDisplay from "../../Core/components/UserDisplay.vue";
 
 const route = useTypedRoute<"Todo">();
 const router = useTypedRouter();
@@ -112,17 +114,17 @@ onMounted(() => {
                     </div>
 
                     <p>{{ todo.text }}</p>
-                    <p class="text-sm text-gray-500 mt-2">Created by: {{ todo.user?.displayName || 'Unknown User' }}</p>
+                    <div class="mt-3">
+                        <p class="text-sm text-gray-500 mb-1">Created by:</p>
+                        <UserDisplay :user="todo.user" :showEmail="true" size="medium" />
+                    </div>
                 </div>
 
                 <TodoPermissions v-if="showPermissions" :todo="todo" :currentUserId="currentUserId"
                     @close="showPermissions = false" />
             </div>
             <div v-if="isFetching || !todo || isUpdating">
-                <div class="flex flex-col gap-4">
-                    <Skeleton width="5rem" />
-                    <Skeleton />
-                </div>
+                <LoadingIndicator message="Loading todo information..." />
             </div>
         </template>
     </Card>

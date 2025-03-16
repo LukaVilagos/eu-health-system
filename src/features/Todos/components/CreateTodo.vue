@@ -3,6 +3,7 @@ import { Dialog, InputText, Message, Button, Checkbox } from "primevue";
 import { Form } from "@primevue/forms";
 import { defineEmits, defineProps, ref } from "vue";
 import type { PermissionSchemaType } from "../../../models/Todo";
+import { useCreateTodoMutation } from "../../../queries/queryTodo.ts";
 import ShareTodo from "./ShareTodo.vue";
 
 const props = defineProps({
@@ -21,16 +22,41 @@ const todoText = ref("");
 const sharedWith = ref<Record<string, PermissionSchemaType>>({});
 const enableSharing = ref(false);
 
+const { mutate: createTodoMutation, isPending: isCreating } = useCreateTodoMutation();
+
 const onFormSubmit = () => {
     if (todoText.value) {
-        emit("submit", {
+        const todoData = {
             text: todoText.value,
             userId: props.userId,
             sharedWith: enableSharing.value ? sharedWith.value : {}
+        };
+
+        const processedSharedWith = todoData.sharedWith
+            ? Object.fromEntries(
+                Object.entries(todoData.sharedWith).map(([userId, permissions]) => [
+                    userId,
+                    {
+                        permissions: permissions.permissions,
+                        addedAt: permissions.addedAt || new Date(),
+                        addedBy: permissions.addedBy || props.userId,
+                    },
+                ])
+            )
+            : {};
+
+        createTodoMutation({
+            text: todoData.text,
+            userId: todoData.userId,
+            sharedWith: processedSharedWith,
+        }, {
+            onSuccess: () => {
+                emit("submit", todoData);
+                todoText.value = "";
+                sharedWith.value = {};
+                enableSharing.value = false;
+            }
         });
-        todoText.value = "";
-        sharedWith.value = {};
-        enableSharing.value = false;
     }
 };
 </script>
@@ -65,7 +91,7 @@ const onFormSubmit = () => {
 
                 <div class="flex justify-around mt-4">
                     <Button label="Cancel" type="button" class="p-button-text" @click="closeCallback()" />
-                    <Button label="Create Todo" severity="primary" type="submit" />
+                    <Button label="Create Todo" severity="primary" type="submit" :loading="isCreating" />
                 </div>
             </Form>
         </template>

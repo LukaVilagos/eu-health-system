@@ -300,7 +300,6 @@ export async function createTodoWithPermissions(
   creatorId: string,
   sharedWith: Record<string, PermissionSchemaType> = {}
 ): Promise<DocumentReference> {
-  console.log(sharedWith);
   const access: Record<string, any> = {};
 
   Object.entries(sharedWith).forEach(([userId, permissions]) => {
