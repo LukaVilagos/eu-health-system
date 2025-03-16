@@ -1,17 +1,12 @@
 <script lang="ts" setup>
-import {Card} from "primevue"
-import PageWrapper from "../../../components/ui/PageWrapper.vue";
+import { Card } from "primevue"
 </script>
 
 <template>
-  <PageWrapper>
-    <Card>
-      <template #title>Forbidden</template>
-      <template #subtitle>You don't have access to this page</template>
-    </Card>
-  </PageWrapper>
+  <Card>
+    <template #title>Forbidden</template>
+    <template #subtitle>You don't have access to this page</template>
+  </Card>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

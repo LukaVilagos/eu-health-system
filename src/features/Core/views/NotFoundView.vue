@@ -1,17 +1,12 @@
 <script lang="ts" setup>
-import {Card} from "primevue"
-import PageWrapper from "../../../components/ui/PageWrapper.vue";
+import { Card } from "primevue";
 </script>
 
 <template>
-  <PageWrapper>
-    <Card>
-      <template #title>This page doesn't exist</template>
-      <template #subtitle>You can go back to the previous page</template>
-    </Card>
-  </PageWrapper>
+  <Card>
+    <template #title>This page doesn't exist</template>
+    <template #subtitle>You can go back to the previous page</template>
+  </Card>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

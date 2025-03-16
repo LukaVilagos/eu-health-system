@@ -1,5 +1,9 @@
-import { useQuery } from "@tanstack/vue-query";
-import { getUserDocument } from "../models/User";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import {
+  assignRoleAndCreateUserDocument,
+  getUserDocument,
+} from "../models/User";
+import type { User } from "firebase/auth";
 
 export const userKeys = {
   all: ["users"] as const,
@@ -14,5 +18,16 @@ export function useUserQuery(userId: string) {
   return useQuery({
     queryKey: userKeys.oneByUid(userId),
     queryFn: () => getUserDocument(userId),
+  });
+}
+
+export function useAssignRoleAndCreateUserMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ user, role }: { user: User; role: string }) =>
+      assignRoleAndCreateUserDocument(user, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+    },
   });
 }

@@ -1,4 +1,5 @@
 <script setup>
+import PageWrapper from '../ui/PageWrapper.vue';
 import Navbar from './Navbar.vue';
 </script>
 
@@ -7,8 +8,8 @@ import Navbar from './Navbar.vue';
         <div class="p-2">
             <Navbar />
         </div>
-        <div class=" overflow-y-scroll scroll-smooth no-scrollbar">
+        <PageWrapper>
             <RouterView />
-        </div>
+        </PageWrapper>
     </div>
 </template>

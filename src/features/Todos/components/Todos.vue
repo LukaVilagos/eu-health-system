@@ -1,37 +1,41 @@
 <script lang="ts" setup>
 import { Card, DataTable, Column, Button, ProgressSpinner } from "primevue";
-import { useTodosQuery } from "../../../queries/queryTodo.ts";
+import { useCreateTodoMutation, useDeleteTodoMutation, useTodosQuery } from "../../../queries/queryTodo.ts";
 import { ref } from "vue";
 import CreateTodo from "./CreateTodo.vue";
-import { createTodo, deleteTodo, type CreateTodoSchemaType, type TodoSchemaType } from "../../../models/Todo.ts";
+import { type CreateTodoSchemaType, type TodoSchemaType } from "../../../models/Todo.ts";
 import { RouterLink } from "vue-router";
 
 
-const { data: todos, refetch, isLoading, isFetching } = useTodosQuery();
+const { data: todos, isLoading } = useTodosQuery();
 const visible = ref(false);
 
 const hideDialog = () => {
   visible.value = false;
 };
 
+
+const { mutate: deleteTodoMutation, isPending: isDeleteUpdating } = useDeleteTodoMutation();
+const { mutate: createTodoMutation, isPending: isCreateUpdating } = useCreateTodoMutation();
+
+async function handleDeleteTodo(todoId: string) {
+  deleteTodoMutation(todoId);
+}
+
+
 async function handleTodoCreated(todoData: CreateTodoSchemaType) {
-  await createTodo(todoData.text);
-  await refetch();
+  createTodoMutation(todoData.text);
   hideDialog();
 };
 
-async function handleDeleteTodo(id: string) {
-  await deleteTodo(id);
-  await refetch();
-};
 </script>
 
 <template>
   <Card>
     <template #title>TODO LIST</template>
     <template #content>
-      <DataTable removableSort :loading="isLoading || isFetching" :value="todos" :paginator="true" :rows="10"
-        :rowsPerPageOptions="[5, 10, 20]">
+      <DataTable removableSort :loading="isLoading || isCreateUpdating || isDeleteUpdating" :value="todos"
+        :paginator="true" :rows="10" :rowsPerPageOptions="[5, 10, 20]">
         <template #header>
           <div class="flex justify-end items-center">
             <Button label="Add" icon="pi pi-plus" class="p-button-outlined" @click="visible = true" />

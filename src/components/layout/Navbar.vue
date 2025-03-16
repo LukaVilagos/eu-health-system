@@ -51,7 +51,7 @@ const toggle = (event: any) => {
         </template>
         <template #end>
             <button @click="toggle" aria-haspopup="true" aria-controls="overlay_menu"
-                class="overflow-hidden w-full border-0 bg-transparent flex items-center py-2 px-4 hover:bg-surface-100 dark:hover:bg-surface-800 rounded-none cursor-pointer transition-colors duration-200">
+                class="overflow-hidden w-full border-0 bg-transparent flex items-center py-2 px-4 hover:bg-surface-100 dark:hover:bg-surface-800 rounded-md cursor-pointer transition-colors duration-200">
                 <Avatar :image="user.photoURL as string" class="mr-2" shape="circle" />
                 <span>{{ user.displayName }}</span>
             </button>

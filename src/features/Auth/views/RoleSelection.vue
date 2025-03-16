@@ -4,11 +4,12 @@ import { Form } from "@primevue/forms";
 import PageWrapper from "../../../components/ui/PageWrapper.vue";
 import { reactive, ref } from "vue";
 import { zodResolver } from "@primevue/forms/resolvers/zod"
-import { assignRoleAndCreateUserDocument, UserRoles } from "../../../models/User.ts";
+import { UserRoles } from "../../../models/User.ts";
 import { z } from "zod";
 import { GeneralErrors } from "../../../constants/errors.ts";
 import { useAuthenticatedUser } from "../../../composables/useAuthGuard.ts";
 import { useTypedRouter } from "../../../composables/useTypedRouter.ts";
+import { useAssignRoleAndCreateUserMutation } from "../../../queries/queryUser.ts";
 
 const user = useAuthenticatedUser();
 const router = useTypedRouter()
@@ -25,9 +26,11 @@ type FormSchemaType = z.infer<typeof formSchema>;
 const formValues = reactive<FormSchemaType>({ role: '' });
 const resolver = ref(zodResolver(formSchema));
 
+const { mutate: assignRoleAndCreateUserDocumentMutation } = useAssignRoleAndCreateUserMutation();
+
 async function onFormSubmit() {
   try {
-    await assignRoleAndCreateUserDocument(user, formValues.role);
+    assignRoleAndCreateUserDocumentMutation({ user, role: formValues.role });
     await router.typedPush({
       name: 'Home',
       params: { userId: user.uid }

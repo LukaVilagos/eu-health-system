@@ -1,5 +1,11 @@
-import { useQuery } from "@tanstack/vue-query";
-import { getAllTodos, getTodoById } from "../models/Todo.ts";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import {
+  createTodo,
+  deleteTodo,
+  getAllTodos,
+  getTodoById,
+  updateTodo,
+} from "../models/Todo.ts";
 
 export const todoKeys = {
   all: ["todos"] as const,
@@ -20,5 +26,39 @@ export function useTodoQuery(id: string) {
   return useQuery({
     queryKey: todoKeys.detail(id),
     queryFn: () => getTodoById(id),
+  });
+}
+
+export function useUpdateTodoMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, text }: { id: string; text: string }) =>
+      updateTodo(id, text),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: todoKeys.detail(variables.id),
+      });
+      queryClient.invalidateQueries({ queryKey: todoKeys.all });
+    },
+  });
+}
+
+export function useDeleteTodoMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteTodo(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: todoKeys.all });
+    },
+  });
+}
+
+export function useCreateTodoMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (text: string) => createTodo(text),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: todoKeys.all });
+    },
   });
 }
