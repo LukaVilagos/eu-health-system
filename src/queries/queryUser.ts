@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import {
   assignRoleAndCreateUserDocument,
+  getAllUsers,
   getUserDocument,
 } from "../models/User";
 import type { User } from "firebase/auth";
@@ -42,5 +43,12 @@ export function useAssignRoleAndCreateUserMutation() {
 
       return { success: true };
     },
+  });
+}
+
+export function useAllUsersQuery() {
+  return useQuery({
+    queryKey: userKeys.lists(),
+    queryFn: getAllUsers,
   });
 }

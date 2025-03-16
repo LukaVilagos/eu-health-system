@@ -1,14 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useAuthUser } from '../../../composables/useAuth';
 import { useTypedRoute } from '../../../composables/useTypedRoute';
 import { useTodosByUserIdQuery } from '../../../queries/queryTodo';
 import { useUserQuery } from '../../../queries/queryUser';
 import { Card, ProgressSpinner } from 'primevue';
 
 const route = useTypedRoute<"Profile">();
-
 const userId = route.typedParams.userId;
+
+const { user: authUser } = useAuthUser();
+const currentUserId = computed(() => authUser.value?.uid || '');
+
 const { data: user, isLoading: isUserLoading } = useUserQuery(userId);
-const { data: todos, isLoading: isTodosLoading } = useTodosByUserIdQuery(userId);
+const { data: todos, isLoading: isTodosLoading } = useTodosByUserIdQuery(userId, currentUserId.value);
+
 </script>
 
 <template>

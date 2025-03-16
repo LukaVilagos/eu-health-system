@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
 import { db } from "../firebase/app.ts";
 import type { User } from "firebase/auth";
 
@@ -55,5 +55,31 @@ export async function getUserDocument(
   } catch (error) {
     console.error("Error fetching user document:", error);
     return null;
+  }
+}
+
+export async function getAllUsers(): Promise<UserSchemaType[]> {
+  try {
+    const usersCollectionRef = collection(db, USER_COLLECTION_NAME);
+    const querySnapshot = await getDocs(usersCollectionRef);
+
+    if (querySnapshot.empty) {
+      return [];
+    }
+
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        uid: doc.id,
+        email: data.email,
+        displayName: data.displayName,
+        photoURL: data.photoURL,
+        role: data.role,
+        createdAt: data.createdAt.toDate(),
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return [];
   }
 }

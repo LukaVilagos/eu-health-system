@@ -1,20 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import {
   createTodo,
+  createTodoWithPermissions,
   deleteTodo,
   getAllTodos,
   getTodoById,
   getTodosByUserId,
   updateTodo,
-  type TodoWithUserSchemaType,
+  type PermissionSchemaType,
 } from "../models/Todo.ts";
+import { createErrorHandler } from "../utils/queryHelpers";
 import {
-  optimisticRemove,
-  optimisticAdd,
-  optimisticUpdate,
-  optimisticUpdateSingle,
-  createErrorHandler,
-} from "../utils/queryHelpers";
+  canViewTodo,
+  canEditTodo,
+  canDeleteTodo,
+} from "../utils/todoPermissionHelpers";
 
 export const todoKeys = {
   all: ["todos"] as const,
@@ -25,29 +25,40 @@ export const todoKeys = {
   user: (userId: string) => [...todoKeys.all, { userId }] as const,
 };
 
-export function useTodosQuery() {
+export function useTodosQuery(currentUserId: string) {
   return useQuery({
-    queryKey: todoKeys.all,
-    queryFn: getAllTodos,
+    queryKey: [...todoKeys.all, { currentUserId }],
+    queryFn: async () => {
+      return await getAllTodos();
+    },
   });
 }
 
-export function useTodosByUserIdQuery(userId: string) {
+export function useTodosByUserIdQuery(userId: string, currentUserId: string) {
   return useQuery({
-    queryKey: todoKeys.user(userId),
-    queryFn: () => getTodosByUserId(userId),
+    queryKey: [...todoKeys.user(userId), { currentUserId }],
+    queryFn: async () => {
+      const todos = await getTodosByUserId(userId, currentUserId);
+      return todos.filter((todo) => canViewTodo(todo, currentUserId));
+    },
     enabled: !!userId,
   });
 }
 
-export function useTodoQuery(id: string) {
+export function useTodoQuery(id: string, currentUserId: string) {
   return useQuery({
-    queryKey: todoKeys.detail(id),
-    queryFn: () => getTodoById(id),
+    queryKey: [...todoKeys.detail(id), { currentUserId }],
+    queryFn: async () => {
+      const todo = await getTodoById(id);
+      if (!todo || !canViewTodo(todo, currentUserId)) {
+        return null;
+      }
+      return todo;
+    },
   });
 }
 
-export function useUpdateTodoMutation() {
+export function useUpdateTodoMutation(currentUserId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, text }: { id: string; text: string }) => {
@@ -56,30 +67,23 @@ export function useUpdateTodoMutation() {
         throw new Error("Todo not found");
       }
 
-      const userId = todo.userId;
+      if (!canEditTodo(todo, currentUserId)) {
+        throw new Error("You don't have permission to edit this todo");
+      }
 
-      const updateFn = (item: TodoWithUserSchemaType) => ({ ...item, text });
-      optimisticUpdate(queryClient, todoKeys.all, id, updateFn);
-      optimisticUpdate(queryClient, todoKeys.user(userId), id, updateFn);
+      await updateTodo(id, text);
 
-      optimisticUpdateSingle<TodoWithUserSchemaType>(
-        queryClient,
-        todoKeys.detail(id),
-        (oldTodo) => (oldTodo ? { ...oldTodo, text } : undefined)
-      );
-
-      return updateTodo(id, text);
+      return { ...todo, text, updatedAt: new Date() };
     },
-    onSuccess: async (_, variables) => {
-      const todo = await getTodoById(variables.id);
-      if (todo) {
+    onSuccess: (updatedTodo) => {
+      if (updatedTodo) {
         queryClient.invalidateQueries({
-          queryKey: todoKeys.user(todo.userId),
+          queryKey: todoKeys.user(updatedTodo.userId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: todoKeys.detail(updatedTodo.id),
         });
       }
-      queryClient.invalidateQueries({
-        queryKey: todoKeys.detail(variables.id),
-      });
       queryClient.invalidateQueries({ queryKey: todoKeys.all });
     },
     onError: createErrorHandler(queryClient, [
@@ -89,7 +93,7 @@ export function useUpdateTodoMutation() {
   });
 }
 
-export function useDeleteTodoMutation() {
+export function useDeleteTodoMutation(currentUserId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
@@ -98,18 +102,13 @@ export function useDeleteTodoMutation() {
         throw new Error("Todo not found");
       }
 
-      const userId = todo.userId;
-
-      optimisticRemove<TodoWithUserSchemaType>(queryClient, todoKeys.all, id);
-      optimisticRemove<TodoWithUserSchemaType>(
-        queryClient,
-        todoKeys.user(userId),
-        id
-      );
+      if (!canDeleteTodo(todo, currentUserId)) {
+        throw new Error("You don't have permission to delete this todo");
+      }
 
       await deleteTodo(id);
 
-      return { userId };
+      return { userId: todo.userId };
     },
     onSuccess: (data) => {
       if (data?.userId) {
@@ -126,25 +125,31 @@ export function useDeleteTodoMutation() {
 export function useCreateTodoMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ text, userId }: { text: string; userId: string }) => {
-      const optimisticTodo: TodoWithUserSchemaType = {
-        id: `temp-${Date.now()}`,
-        text,
-        userId,
-        user: null,
-      };
+    mutationFn: async ({
+      text,
+      userId,
+      sharedWith,
+    }: {
+      text: string;
+      userId: string;
+      sharedWith?: Record<string, PermissionSchemaType>;
+    }) => {
+      const formattedSharedWith = sharedWith
+        ? Object.fromEntries(
+            Object.entries(sharedWith).map(([userId, permissions]) => [
+              userId,
+              {
+                permissions: permissions.permissions,
+                addedAt: permissions.addedAt || new Date(),
+                addedBy: permissions.addedBy || userId,
+              },
+            ])
+          )
+        : {};
 
-      optimisticAdd<TodoWithUserSchemaType>(
-        queryClient,
-        todoKeys.all,
-        optimisticTodo
-      );
-      optimisticAdd<TodoWithUserSchemaType>(
-        queryClient,
-        todoKeys.user(userId),
-        optimisticTodo
-      );
-
+      if (Object.keys(formattedSharedWith).length > 0) {
+        return createTodoWithPermissions(text, userId, formattedSharedWith);
+      }
       return createTodo(text, userId);
     },
     onSuccess: (_, variables) => {
