@@ -113,13 +113,11 @@ export async function getAllTodos(): Promise<TodoWithUserSchemaType[]> {
     const todos = querySnapshot.docs.map((doc) => {
       const data = doc.data();
 
-      // Process access object to convert timestamps to Date objects
       const access: Record<string, any> = {};
       if (data.access) {
         Object.keys(data.access).forEach((userId) => {
           access[userId] = {
             ...data.access[userId],
-            // Convert Firestore timestamp to Date object
             addedAt: data.access[userId].addedAt?.toDate
               ? data.access[userId].addedAt.toDate()
               : new Date(),
@@ -161,13 +159,11 @@ export async function getTodosByUserId(
     const todos = querySnapshot.docs.map((doc) => {
       const data = doc.data();
 
-      // Process access object to convert timestamps to Date objects
       const access: Record<string, any> = {};
       if (data.access) {
         Object.keys(data.access).forEach((userId) => {
           access[userId] = {
             ...data.access[userId],
-            // Convert Firestore timestamp to Date object
             addedAt: data.access[userId].addedAt?.toDate
               ? data.access[userId].addedAt.toDate()
               : new Date(),
@@ -209,13 +205,11 @@ export async function getTodoById(
 
     const data = docSnapshot.data();
 
-    // Process access object to convert timestamps to Date objects
     const access: Record<string, any> = {};
     if (data.access) {
       Object.keys(data.access).forEach((userId) => {
         access[userId] = {
           ...data.access[userId],
-          // Convert Firestore timestamp to Date object
           addedAt: data.access[userId].addedAt?.toDate
             ? data.access[userId].addedAt.toDate()
             : new Date(),
@@ -242,10 +236,8 @@ export async function getTodoById(
 }
 
 export async function createTodo(text: string, userId: string) {
-  // Validate the required fields
   createTodoSchema.parse({ text, userId });
 
-  // Create the complete todo data with all fields
   const todoData = {
     text,
     userId,

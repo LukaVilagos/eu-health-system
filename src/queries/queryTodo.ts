@@ -6,6 +6,8 @@ import {
   getAllTodos,
   getTodoById,
   getTodosByUserId,
+  grantTodoPermission,
+  revokeTodoPermission,
   updateTodo,
   type PermissionSchemaType,
 } from "../models/Todo.ts";
@@ -161,6 +163,60 @@ export function useCreateTodoMutation() {
     onError: createErrorHandler(queryClient, [
       todoKeys.all,
       [todoKeys.user("")],
+    ]),
+  });
+}
+
+export function useGrantTodoPermissionMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      todoId,
+      targetUserId,
+      permissions,
+      grantedBy,
+    }: {
+      todoId: string;
+      targetUserId: string;
+      permissions: string[];
+      grantedBy: string;
+    }) => {
+      await grantTodoPermission(todoId, targetUserId, permissions, grantedBy);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: todoKeys.detail(variables.todoId),
+      });
+      queryClient.invalidateQueries({ queryKey: todoKeys.all });
+    },
+    onError: createErrorHandler(queryClient, [
+      todoKeys.all,
+      todoKeys.details(),
+    ]),
+  });
+}
+
+export function useRevokeTodoPermissionMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      todoId,
+      userId,
+    }: {
+      todoId: string;
+      userId: string;
+    }) => {
+      await revokeTodoPermission(todoId, userId);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: todoKeys.detail(variables.todoId),
+      });
+      queryClient.invalidateQueries({ queryKey: todoKeys.all });
+    },
+    onError: createErrorHandler(queryClient, [
+      todoKeys.all,
+      todoKeys.details(),
     ]),
   });
 }

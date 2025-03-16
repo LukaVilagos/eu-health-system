@@ -10,8 +10,6 @@ export async function searchUsersByEmail(
   }
 
   try {
-    // This is a simple implementation - in a real app, you would use
-    // a more sophisticated approach with proper indexing
     const usersRef = collection(db, "users");
     const q = query(
       usersRef,

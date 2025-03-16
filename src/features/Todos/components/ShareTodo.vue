@@ -55,15 +55,13 @@ const addUser = async () => {
             return;
         }
 
-        const user = results[0]; // Take the first matching user
+        const user = results[0];
 
-        // Check if this user is already added
         if (sharedUsers.value[user.uid]) {
             searchError.value = 'This user has already been added';
             return;
         }
 
-        // Use the actual Firebase user ID
         const userId = user.uid;
 
         sharedUsers.value[userId] = {
@@ -71,7 +69,7 @@ const addUser = async () => {
             displayName: user.displayName
         };
 
-        selectedPermissions.value[userId] = [PermissionLevel.VIEW]; // Default permission
+        selectedPermissions.value[userId] = [PermissionLevel.VIEW];
         updateModelValue();
 
     } catch (error) {

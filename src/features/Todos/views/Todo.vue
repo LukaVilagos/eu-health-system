@@ -21,6 +21,8 @@ const editMode = ref(false);
 const todoText = ref("");
 const showPermissions = ref(false);
 
+const shouldShowPermissions = ref(route.query.permissions === "true");
+
 const canEdit = computed(() => todo.value && canEditTodo(todo.value, currentUserId.value));
 const canDelete = computed(() => todo.value && canDeleteTodo(todo.value, currentUserId.value));
 const isOwner = computed(() => todo.value && todo.value.userId === currentUserId.value);
@@ -28,6 +30,10 @@ const isOwner = computed(() => todo.value && todo.value.userId === currentUserId
 watch(todo, (newTodo) => {
     if (newTodo) {
         todoText.value = newTodo.text;
+
+        if (shouldShowPermissions.value && newTodo.userId === currentUserId.value) {
+            showPermissions.value = true;
+        }
     }
 }, { immediate: true });
 
@@ -45,6 +51,13 @@ function toggleEditMode() {
 
 function togglePermissions() {
     showPermissions.value = !showPermissions.value;
+    shouldShowPermissions.value = showPermissions.value;
+    router.replace({
+        query: {
+            ...route.query,
+            permissions: showPermissions.value ? 'true' : undefined
+        }
+    });
 }
 
 const { mutate: deleteTodoMutation } = useDeleteTodoMutation(currentUserId.value);
@@ -68,6 +81,7 @@ onMounted(() => {
     if (route.query.edit === "true" && canEdit.value) {
         editMode.value = true;
     }
+    shouldShowPermissions.value = route.query.permissions === "true";
 });
 </script>
 
@@ -85,7 +99,7 @@ onMounted(() => {
             </div>
         </template>
         <template #content>
-            <div v-if="todo && !isFetching && !isUpdating">
+            <div v-if="todo && !isFetching && !isUpdating" class="flex flex-col gap-4">
                 <div v-if="editMode">
                     <Form @submit="handleEditTodo" class="flex flex-col gap-4 max-w-64">
                         <InputText v-model="todoText" name="text" placeholder="Enter Todo" required />
@@ -101,7 +115,8 @@ onMounted(() => {
                     <p class="text-sm text-gray-500 mt-2">Created by: {{ todo.user?.displayName || 'Unknown User' }}</p>
                 </div>
 
-                <TodoPermissions v-if="showPermissions" />
+                <TodoPermissions v-if="showPermissions" :todo="todo" :currentUserId="currentUserId"
+                    @close="showPermissions = false" />
             </div>
             <div v-if="isFetching || !todo || isUpdating">
                 <div class="flex flex-col gap-4">

@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <main class="p-4">
+  <main class="px-4 pb-4">
     <slot />
   </main>
 </template>
