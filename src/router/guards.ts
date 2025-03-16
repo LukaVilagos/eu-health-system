@@ -1,9 +1,10 @@
 import type { RouteLocationNormalizedGeneric } from "vue-router";
 import { UserRoles } from "../models/User";
+import type { AuthUser } from "../stores/authStore";
 
 export const protectedGuard = (
   to: RouteLocationNormalizedGeneric,
-  user: any
+  user: AuthUser | null
 ) => {
   if (to.meta.isProtected && !user) {
     return { name: "SignIn", params: {} };
@@ -13,7 +14,7 @@ export const protectedGuard = (
 
 export const roleSelectionGuard = (
   to: RouteLocationNormalizedGeneric,
-  user: any
+  user: AuthUser | null
 ) => {
   if (to.name === "RoleSelection" && user) {
     if (user.role) {
@@ -23,37 +24,47 @@ export const roleSelectionGuard = (
   return true;
 };
 
-export const authGuard = (to: RouteLocationNormalizedGeneric, user: any) => {
+export const authGuard = (
+  to: RouteLocationNormalizedGeneric,
+  user: AuthUser | null
+) => {
   if (to.meta.isProtected && !user) {
     return { name: "Forbidden" };
   }
   return true;
 };
 
-export const guestGuard = (to: RouteLocationNormalizedGeneric, user: any) => {
+export const guestGuard = (
+  to: RouteLocationNormalizedGeneric,
+  user: AuthUser | null
+) => {
   if (to.meta.isGuestRoute && user) {
     return { name: "Home", params: {} };
   }
   return true;
 };
 
-export const patientGuard = (to: RouteLocationNormalizedGeneric, user: any) => {
+export const patientGuard = (
+  to: RouteLocationNormalizedGeneric,
+  user: AuthUser | null
+) => {
   if (to.meta.isPatientRoute && user) {
-    if (user.value.role == UserRoles.PATIENT) {
+    if (user.role === UserRoles.PATIENT) {
       return true;
     }
-
     return { name: "Forbidden" };
   }
   return true;
 };
 
-export const doctorGuard = (to: RouteLocationNormalizedGeneric, user: any) => {
+export const doctorGuard = (
+  to: RouteLocationNormalizedGeneric,
+  user: AuthUser | null
+) => {
   if (to.meta.isDoctorRoute && user) {
-    if (user.value.role == UserRoles.DOCTOR) {
+    if (user.role === UserRoles.DOCTOR) {
       return true;
     }
-
     return { name: "Forbidden" };
   }
   return true;

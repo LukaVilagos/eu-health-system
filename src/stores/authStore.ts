@@ -68,7 +68,6 @@ export const useAuthStore = defineStore("auth", () => {
 
         isLoading.value = false;
 
-        // Invalidate auth query when the auth state changes
         queryClient.invalidateQueries({ queryKey: authKeys.user });
 
         if (!isInitialized.value) {
@@ -108,8 +107,6 @@ export const useAuthStore = defineStore("auth", () => {
           params: {},
         });
       }
-
-      // After successful sign-in, invalidate the auth query
       queryClient.invalidateQueries({ queryKey: authKeys.user });
 
       return result.user;
@@ -134,7 +131,6 @@ export const useAuthStore = defineStore("auth", () => {
 
       await router.push({ name: "SignIn" });
 
-      // After sign-out, invalidate the auth query
       queryClient.invalidateQueries({ queryKey: authKeys.user });
 
       return null;

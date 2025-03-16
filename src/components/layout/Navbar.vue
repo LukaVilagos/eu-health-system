@@ -7,7 +7,6 @@ import { useTypedRouter } from "../../composables/useTypedRouter";
 import { UserRoles } from "../../models/User";
 
 const { signOut } = useAuth();
-// Replace async function call with reactive composable
 const { user, isLoading } = useAuthUser();
 const router = useTypedRouter();
 
@@ -52,7 +51,6 @@ const baseItems = ref<MenuItem[]>([
     }
 ]);
 
-// Calculate menu items based on user role
 const items = computed<MenuItem[]>(() => {
     const menuItems = [...baseItems.value];
 

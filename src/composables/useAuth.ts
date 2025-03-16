@@ -21,7 +21,6 @@ export async function useAuthenticatedUser(): Promise<
   return auth.user;
 }
 
-// Updated composable using TanStack Query
 export function useAuthUser() {
   const { data: user, isLoading, error, isSuccess } = useAuthUserQuery();
 
