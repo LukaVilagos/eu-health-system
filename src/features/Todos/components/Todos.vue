@@ -21,13 +21,13 @@ const showCreateDialog = () => {
 
 const handleTodoCreated = () => {
   hideDialog();
-  refetch(); // Refresh todos list after creation
+  refetch();
 };
 </script>
 
 <template>
   <TodoList :todos="todos" :isLoading="isLoading" :currentUserId="currentUserId" displayMode="table" :showOwner="true"
-    :showActions="true" title="TODO TABLE" @add="showCreateDialog" />
+    :actions="['add', 'delete']" title="TODO TABLE" @add="showCreateDialog" />
 
   <CreateTodo :visible="visible" :userId="user?.uid ?? ''" @close="hideDialog" @submit="handleTodoCreated" />
 </template>

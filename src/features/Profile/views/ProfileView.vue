@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { useAuthUser } from '../../../composables/useAuth';
 import { useTypedRoute } from '../../../composables/useTypedRoute';
-import { useTodosByUserIdQuery } from '../../../queries/queryTodo';
+import { useTodosByUserIdQuery, useSharedTodosQuery } from '../../../queries/queryTodo';
 import { useUserQuery } from '../../../queries/queryUser';
 import { Card } from 'primevue';
 import LoadingIndicator from '../../Core/components/LoadingIndicator.vue';
@@ -18,6 +18,7 @@ const currentUserId = computed(() => authUser.value?.uid || '');
 
 const { data: user, isLoading: isUserLoading } = useUserQuery(userId);
 const { data: todos, isLoading: isTodosLoading, refetch } = useTodosByUserIdQuery(userId, currentUserId.value);
+const { data: sharedTodos, isLoading: isSharedTodosLoading } = useSharedTodosQuery(userId);
 
 const createTodoVisible = ref(false);
 
@@ -49,7 +50,12 @@ const handleTodoCreated = () => {
         </Card>
         <div v-if="!isUserLoading">
             <TodoList :todos="todos || []" :isLoading="isTodosLoading" :currentUserId="currentUserId" displayMode="list"
-                :showOwner="false" :showActions="true" title="USER TODOS" @add="showCreateDialog" />
+                :showOwner="false" :actions="['add', 'delete']" title="USER TODOS" @add="showCreateDialog" />
+
+            <div class="mt-4">
+                <TodoList :todos="sharedTodos || []" :isLoading="isSharedTodosLoading" :currentUserId="currentUserId"
+                    displayMode="list" :showOwner="true" :actions="['delete']" title="SHARED WITH USER" />
+            </div>
         </div>
     </div>
 

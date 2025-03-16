@@ -1,12 +1,13 @@
 <script lang="ts" setup>
 import { Button } from "primevue";
+import { computed } from "vue";
 import { createTypedLink } from "../../../composables/useTypedRoute.ts";
 import TypedRouterLink from "../../Core/components/TypedRouterLink.vue";
 import { canDeleteTodo, canViewTodo } from "../../../utils/todoPermissionHelpers.ts";
 import UserDisplay from "../../Core/components/UserDisplay.vue";
 import type { TodoWithUserSchemaType } from "../../../models/Todo.ts";
 
-defineProps({
+const props = defineProps({
     todos: {
         type: Array as () => TodoWithUserSchemaType[],
         required: true
@@ -15,9 +16,9 @@ defineProps({
         type: String,
         required: true
     },
-    showActions: {
-        type: Boolean,
-        default: true
+    actions: {
+        type: Array as () => string[],
+        default: () => ['add', 'delete']
     },
     showOwner: {
         type: Boolean,
@@ -26,6 +27,8 @@ defineProps({
 });
 
 const emit = defineEmits(['delete']);
+
+const canDelete = computed(() => props.actions.includes('delete'));
 
 function handleDeleteTodo(todo: TodoWithUserSchemaType) {
     emit('delete', todo);
@@ -44,8 +47,8 @@ function handleDeleteTodo(todo: TodoWithUserSchemaType) {
                             <UserDisplay :user="todo.user" size="small" />
                         </div>
                     </div>
-                    <div v-if="showActions" class="flex gap-2">
-                        <Button icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
+                    <div v-if="actions.length > 0" class="flex gap-2">
+                        <Button v-if="canDelete" icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
                             @click="handleDeleteTodo(todo)" :disabled="!canDeleteTodo(todo, currentUserId)" />
                         <TypedRouterLink :to="createTypedLink({
                             name: 'Todo',

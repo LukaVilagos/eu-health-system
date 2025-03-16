@@ -6,6 +6,7 @@ import {
   getAllTodos,
   getTodoById,
   getTodosByUserId,
+  getTodosSharedWithUser,
   grantTodoPermission,
   revokeTodoPermission,
   updateTodo,
@@ -25,6 +26,8 @@ export const todoKeys = {
   details: () => [...todoKeys.all, "detail"] as const,
   detail: (id: string) => [...todoKeys.details(), id] as const,
   user: (userId: string) => [...todoKeys.all, { userId }] as const,
+  sharedWith: (userId: string) =>
+    [...todoKeys.all, "sharedWith", userId] as const,
 };
 
 export function useTodosQuery(currentUserId: string) {
@@ -57,6 +60,16 @@ export function useTodoQuery(id: string, currentUserId: string) {
       }
       return todo;
     },
+  });
+}
+
+export function useSharedTodosQuery(userId: string) {
+  return useQuery({
+    queryKey: todoKeys.sharedWith(userId),
+    queryFn: async () => {
+      return await getTodosSharedWithUser(userId);
+    },
+    enabled: !!userId,
   });
 }
 

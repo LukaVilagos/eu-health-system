@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { DataTable, Column, Button } from "primevue";
+import { computed } from "vue";
 import { createTypedLink } from "../../../composables/useTypedRoute.ts";
 import TypedRouterLink from "../../Core/components/TypedRouterLink.vue";
 import { canDeleteTodo, canViewTodo } from "../../../utils/todoPermissionHelpers.ts";
@@ -7,7 +8,7 @@ import LoadingIndicator from "../../Core/components/LoadingIndicator.vue";
 import UserDisplay from "../../Core/components/UserDisplay.vue";
 import type { TodoWithUserSchemaType } from "../../../models/Todo.ts";
 
-defineProps({
+const props = defineProps({
     todos: {
         type: Array as () => TodoWithUserSchemaType[],
         default: () => []
@@ -20,9 +21,9 @@ defineProps({
         type: String,
         required: true
     },
-    showActions: {
-        type: Boolean,
-        default: true
+    actions: {
+        type: Array as () => string[],
+        default: () => ['add', 'delete']
     },
     showOwner: {
         type: Boolean,
@@ -36,6 +37,10 @@ defineProps({
 
 const emit = defineEmits(['add', 'delete']);
 
+const canAdd = computed(() => props.actions.includes('add'));
+const canDelete = computed(() => props.actions.includes('delete'));
+const showActions = computed(() => props.actions.length > 0);
+
 function handleDeleteTodo(todo: TodoWithUserSchemaType) {
     emit('delete', todo);
 }
@@ -47,15 +52,13 @@ function handleDeleteTodo(todo: TodoWithUserSchemaType) {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-bold text-xl">{{ title || 'TODO LIST' }}</h2>
-                <Button v-if="showActions" label="Add" icon="pi pi-plus" class="p-button-outlined"
-                    @click="$emit('add')" />
+                <Button v-if="canAdd" label="Add" icon="pi pi-plus" class="p-button-outlined" @click="$emit('add')" />
             </div>
         </template>
         <template #empty>
             <div class="flex flex-col items-center gap-4" v-if="!isLoading">
                 <p>No todos found</p>
-                <Button v-if="showActions" label="Add" icon="pi pi-plus" class="p-button-outlined"
-                    @click="$emit('add')" />
+                <Button v-if="canAdd" label="Add" icon="pi pi-plus" class="p-button-outlined" @click="$emit('add')" />
             </div>
         </template>
         <template #loading>
@@ -73,7 +76,7 @@ function handleDeleteTodo(todo: TodoWithUserSchemaType) {
         <Column v-if="showActions" header="Actions" class="w-28">
             <template #body="{ data }: { data: TodoWithUserSchemaType }">
                 <div class="w-full flex justify-center gap-2 items-center">
-                    <Button icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
+                    <Button v-if="canDelete" icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
                         @click="handleDeleteTodo(data)" :disabled="!canDeleteTodo(data, currentUserId)" />
                     <TypedRouterLink :to="createTypedLink({
                         name: 'Todo',

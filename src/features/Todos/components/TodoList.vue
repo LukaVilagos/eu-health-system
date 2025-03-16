@@ -26,9 +26,9 @@ const props = defineProps({
         default: 'table',
         validator: (value: string) => ['table', 'list', 'grid'].includes(value)
     },
-    showActions: {
-        type: Boolean,
-        default: true
+    actions: {
+        type: Array as () => string[],
+        default: () => ['add', 'delete']
     },
     showOwner: {
         type: Boolean,
@@ -53,6 +53,8 @@ const isTableMode = computed(() => props.displayMode === 'table');
 const isDataViewMode = computed(() => props.displayMode === 'list' || props.displayMode === 'grid');
 const isLoadingOrUpdating = computed(() => props.isLoading || isDeleteUpdating.value);
 
+const canAdd = computed(() => props.actions.includes('add'));
+
 const layout = ref<'list' | 'grid'>(props.displayMode === 'grid' ? 'grid' : 'list');
 const layoutOptions = ref(['list', 'grid']);
 </script>
@@ -61,7 +63,7 @@ const layoutOptions = ref(['list', 'grid']);
     <Card v-if="isTableMode">
         <template #content>
             <TodoTableView :todos="todos" :isLoading="isLoadingOrUpdating" :currentUserId="currentUserId"
-                :showActions="showActions" :showOwner="showOwner" :title="title" @add="$emit('add')"
+                :actions="actions" :showOwner="showOwner" :title="title" @add="$emit('add')"
                 @delete="handleDeleteTodo" />
         </template>
     </Card>
@@ -76,7 +78,7 @@ const layoutOptions = ref(['list', 'grid']);
                     <div class="flex justify-between items-center">
                         <h2 class="font-bold text-xl">{{ title || 'TODO LIST' }}</h2>
                         <div class="flex gap-2">
-                            <Button v-if="showActions" label="Add" icon="pi pi-plus" class="p-button-outlined"
+                            <Button v-if="canAdd" label="Add" icon="pi pi-plus" class="p-button-outlined"
                                 @click="$emit('add')" />
                             <SelectButton v-model="layout" :options="layoutOptions" :allowEmpty="false">
                                 <template #option="{ option }">
@@ -88,19 +90,19 @@ const layoutOptions = ref(['list', 'grid']);
                 </template>
 
                 <template #list>
-                    <TodoListView :todos="todos" :currentUserId="currentUserId" :showActions="showActions"
+                    <TodoListView :todos="todos" :currentUserId="currentUserId" :actions="actions"
                         :showOwner="showOwner" @delete="handleDeleteTodo" />
                 </template>
 
                 <template #grid>
-                    <TodoGridView :todos="todos" :currentUserId="currentUserId" :showActions="showActions"
+                    <TodoGridView :todos="todos" :currentUserId="currentUserId" :actions="actions"
                         :showOwner="showOwner" @delete="handleDeleteTodo" />
                 </template>
 
                 <template #empty>
                     <div class="flex flex-col items-center gap-4 p-4" v-if="!isLoadingOrUpdating">
                         <p>No todos found</p>
-                        <Button v-if="showActions" label="Add" icon="pi pi-plus" class="p-button-outlined"
+                        <Button v-if="canAdd" label="Add" icon="pi pi-plus" class="p-button-outlined"
                             @click="$emit('add')" />
                     </div>
                 </template>

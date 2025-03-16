@@ -323,3 +323,58 @@ export async function createTodoWithPermissions(
   const todosCollectionRef = collection(db, TODO_COLLECTION_NAME);
   return await addDoc(todosCollectionRef, todoData);
 }
+
+export async function getTodosSharedWithUser(
+  userId: string
+): Promise<TodoWithUserSchemaType[]> {
+  try {
+    const todosCollectionRef = collection(db, TODO_COLLECTION_NAME);
+    const q = query(todosCollectionRef, where("userId", "!=", userId));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      return [];
+    }
+
+    const todos = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+
+      const access: Record<string, any> = {};
+      if (data.access) {
+        Object.keys(data.access).forEach((accessUserId) => {
+          access[accessUserId] = {
+            ...data.access[accessUserId],
+            addedAt: data.access[accessUserId].addedAt?.toDate
+              ? data.access[accessUserId].addedAt.toDate()
+              : new Date(),
+          };
+        });
+      }
+
+      return {
+        id: doc.id,
+        text: data.text,
+        userId: data.userId,
+        access: access,
+        createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+        updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
+      };
+    });
+
+    const sharedTodos = todos.filter(
+      (todo) =>
+        todo.access &&
+        todo.access[userId] &&
+        todo.access[userId].permissions &&
+        todo.access[userId].permissions.includes(PermissionLevel.VIEW)
+    );
+
+    const todosWithValidation = sharedTodos.map((todo) =>
+      TodoSchema.parse(todo)
+    );
+    return await enhanceWithUserData(todosWithValidation);
+  } catch (error) {
+    console.error("Error fetching shared todos:", error);
+    return [];
+  }
+}
