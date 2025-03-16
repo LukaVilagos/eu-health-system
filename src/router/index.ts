@@ -10,12 +10,20 @@ import NotFoundView from "../features/Core/views/NotFoundView.vue";
 import { useAuth } from "../composables/useAuth.ts";
 import RoleSelection from "../features/Auth/views/RoleSelection.vue";
 import type { AppRouteName } from "./routeTypes";
-import { authGuard, guestGuard, roleSelectionGuard } from "./guards.ts";
+import {
+  authGuard,
+  doctorGuard,
+  guestGuard,
+  patientGuard,
+  roleSelectionGuard,
+} from "./guards.ts";
 import AuthLayout from "../components/layout/AuthLayout.vue";
 import DefaultLayout from "../components/layout/DefaultLayout.vue";
 import BlankLayout from "../components/layout/BlankLayout.vue";
 import Todo from "../features/Todos/views/Todo.vue";
 import ProfileView from "../features/Profile/views/ProfileView.vue";
+import PatientView from "../features/Profile/views/PatientView.vue";
+import DoctorView from "../features/Profile/views/DoctorView.vue";
 
 const protectRouteMeta = {
   isProtected: true,
@@ -29,15 +37,13 @@ const unprotectRouteMeta = {
   isProtected: false,
 };
 
-/*
 const patientRouteMeta = {
-    isPatientRoute: true
-}
+  isPatientRoute: true,
+};
 
 const doctorRouteMeta = {
-    isDoctorRoute: true
-}
-*/
+  isDoctorRoute: true,
+};
 
 const routes: Readonly<RouteRecordRaw[]> = [
   {
@@ -82,6 +88,18 @@ const routes: Readonly<RouteRecordRaw[]> = [
         name: "Profile" as AppRouteName,
         meta: protectRouteMeta,
         props: true,
+      },
+      {
+        path: "patient",
+        component: PatientView,
+        name: "Patient" as AppRouteName,
+        meta: { ...protectRouteMeta, ...patientRouteMeta },
+      },
+      {
+        path: "doctor",
+        component: DoctorView,
+        name: "Doctor" as AppRouteName,
+        meta: { ...protectRouteMeta, ...doctorRouteMeta },
       },
     ],
   },
@@ -128,6 +146,12 @@ router.beforeEach(async (to, _from) => {
 
   const guestGuardResult = guestGuard(to, currentUser);
   if (guestGuardResult !== true) return guestGuardResult;
+
+  const patientGuardResult = patientGuard(to, currentUser);
+  if (patientGuardResult !== true) return patientGuardResult;
+
+  const doctorGuardResult = doctorGuard(to, currentUser);
+  if (doctorGuardResult !== true) return doctorGuardResult;
 
   return true;
 });

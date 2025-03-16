@@ -4,10 +4,28 @@ import { ref } from "vue";
 import { useAuthenticatedUser, useAuthGuard } from "../../composables/useAuthGuard";
 import type { MenuItem } from "primevue/menuitem";
 import { useTypedRouter } from "../../composables/useTypedRouter";
+// import { UserRoles } from "../../models/User";
+
 
 const { signOut } = useAuthGuard();
-const user = useAuthenticatedUser();
+const authenticatedUser = useAuthenticatedUser();
 const router = useTypedRouter();
+
+// const patientItems = ref<MenuItem[]>([
+//     {
+//         label: 'Patient',
+//         icon: 'pi pi-user',
+//         command: () => router.typedPush({ name: "Patient", params: {} })
+//     }
+// ]);
+
+// const doctorItems = ref<MenuItem[]>([
+//     {
+//         label: 'Doctor',
+//         icon: 'pi pi-user',
+//         command: () => router.typedPush({ name: "Doctor", params: {} })
+//     }
+// ]);
 
 const items = ref<MenuItem[]>([
     {
@@ -16,19 +34,25 @@ const items = ref<MenuItem[]>([
     {
         label: 'Home',
         icon: 'pi pi-home',
-        command: () => router.typedPush({ name: "Home", params: { userId: user.uid } })
+        command: () => authenticatedUser && router.typedPush({ name: "Home", params: { userId: authenticatedUser.uid } })
     },
     {
         separator: true,
     }
 ]);
 
+// if (authenticatedUser && authenticatedUser.role === UserRoles.PATIENT) {
+//     items.value.push(...patientItems.value);
+// } else if (authenticatedUser && authenticatedUser.role === UserRoles.DOCTOR) {
+//     items.value.push(...doctorItems.value);
+// }
+
 const profileMenu = ref();
 const profileMenuItems = ref([
     {
         label: 'Profile',
         icon: 'pi pi-user',
-        command: () => router.typedPush({ name: "Profile", params: { userId: user.uid } })
+        command: () => authenticatedUser && router.typedPush({ name: "Profile", params: { userId: authenticatedUser.uid } })
     },
     {
         label: 'Sign Out',
@@ -40,8 +64,6 @@ const profileMenuItems = ref([
 const toggle = (event: any) => {
     profileMenu.value.toggle(event);
 };
-
-
 </script>
 
 <template>
@@ -52,8 +74,8 @@ const toggle = (event: any) => {
         <template #end>
             <button @click="toggle" aria-haspopup="true" aria-controls="overlay_menu"
                 class="overflow-hidden w-full border-0 bg-transparent flex items-center py-2 px-4 hover:bg-surface-100 dark:hover:bg-surface-800 rounded-md cursor-pointer transition-colors duration-200">
-                <Avatar :image="user.photoURL as string" class="mr-2" shape="circle" />
-                <span>{{ user.displayName }}</span>
+                <Avatar :image="authenticatedUser.photoURL as string" class="mr-2" shape="circle" />
+                <span>{{ authenticatedUser.displayName }}</span>
             </button>
             <Menu ref="profileMenu" id="overlay_menu" :model="profileMenuItems" :popup="true" />
         </template>

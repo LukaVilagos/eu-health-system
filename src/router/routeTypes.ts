@@ -7,7 +7,9 @@ export type AppRouteName =
   | "Forbidden"
   | "NotFound"
   | "Todo"
-  | "Profile";
+  | "Profile"
+  | "Patient"
+  | "Doctor";
 
 export interface RouteParamsMap {
   SignIn: Record<string, never>;
@@ -23,6 +25,8 @@ export interface RouteParamsMap {
   Profile: {
     userId: string;
   };
+  Patient: Record<string, never>;
+  Doctor: Record<string, never>;
 }
 
 export type ParamsFor<RouteName extends AppRouteName> =

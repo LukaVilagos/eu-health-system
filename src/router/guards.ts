@@ -1,8 +1,9 @@
 import type { RouteLocationNormalizedGeneric } from "vue-router";
-import { USER_COLLECTION_NAME } from "../models/User";
+import { USER_COLLECTION_NAME, UserRoles } from "../models/User";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/app";
 import type { User } from "firebase/auth";
+import { useUserQuery } from "../queries/queryUser";
 
 export const roleSelectionGuard = async (
   to: RouteLocationNormalizedGeneric,
@@ -35,6 +36,32 @@ export const guestGuard = (
 ) => {
   if (to.meta.isGuestRoute && currentUser) {
     return { name: "Home", params: { userId: currentUser.uid } };
+  }
+  return true;
+};
+
+export const patientGuard = (
+  to: RouteLocationNormalizedGeneric,
+  currentUser: User | null
+) => {
+  if (to.meta.isPatientRoute && currentUser) {
+    const { data: user } = useUserQuery(currentUser.uid);
+    if (user.value?.role != UserRoles.PATIENT) {
+      return { name: "Forbidden" };
+    }
+  }
+  return true;
+};
+
+export const doctorGuard = (
+  to: RouteLocationNormalizedGeneric,
+  currentUser: User | null
+) => {
+  if (to.meta.isDoctorRoute && currentUser) {
+    const { data: user } = useUserQuery(currentUser.uid);
+    if (user.value?.role != UserRoles.DOCTOR) {
+      return { name: "Forbidden" };
+    }
   }
   return true;
 };
