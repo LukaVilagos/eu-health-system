@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { Dialog, InputText, Message, Button } from "primevue";
 import { Form } from "@primevue/forms";
-import { defineProps, defineEmits, ref } from "vue";
+import { defineEmits, ref } from "vue";
 
 defineProps({
     visible: {

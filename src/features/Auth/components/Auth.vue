@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import { Button, ProgressSpinner } from "primevue";
-import { useAuthGuard } from "../../../composables/useAuthGuard.ts";
+import { useAuth } from "../../../composables/useAuth.ts";
 
-const { user, isLoading, signIn } = useAuthGuard()
+const { user, isLoading, signIn } = useAuth()
 </script>
 
 <template>

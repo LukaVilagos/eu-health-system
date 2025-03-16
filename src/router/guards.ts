@@ -1,67 +1,60 @@
 import type { RouteLocationNormalizedGeneric } from "vue-router";
-import { USER_COLLECTION_NAME, UserRoles } from "../models/User";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase/app";
-import type { User } from "firebase/auth";
-import { useUserQuery } from "../queries/queryUser";
+import { UserRoles } from "../models/User";
 
-export const roleSelectionGuard = async (
+export const protectedGuard = (
   to: RouteLocationNormalizedGeneric,
-  currentUser: User | null
+  user: any
 ) => {
-  if (to.name === "RoleSelection" && currentUser) {
-    const userDocRef = doc(db, USER_COLLECTION_NAME, currentUser.uid);
-    const userDoc = await getDoc(userDocRef);
+  if (to.meta.isProtected && !user) {
+    return { name: "SignIn", params: {} };
+  }
+  return true;
+};
 
-    if (userDoc.exists() && userDoc.data().role) {
-      return { name: "Home", params: { userId: currentUser.uid } };
+export const roleSelectionGuard = (
+  to: RouteLocationNormalizedGeneric,
+  user: any
+) => {
+  if (to.name === "RoleSelection" && user) {
+    if (user.role) {
+      return { name: "Home", params: {} };
     }
   }
   return true;
 };
 
-export const authGuard = (
-  to: RouteLocationNormalizedGeneric,
-  currentUser: User | null
-) => {
-  if (to.meta.isProtected && !currentUser) {
+export const authGuard = (to: RouteLocationNormalizedGeneric, user: any) => {
+  if (to.meta.isProtected && !user) {
     return { name: "Forbidden" };
   }
   return true;
 };
 
-export const guestGuard = (
-  to: RouteLocationNormalizedGeneric,
-  currentUser: User | null
-) => {
-  if (to.meta.isGuestRoute && currentUser) {
-    return { name: "Home", params: { userId: currentUser.uid } };
+export const guestGuard = (to: RouteLocationNormalizedGeneric, user: any) => {
+  if (to.meta.isGuestRoute && user) {
+    return { name: "Home", params: {} };
   }
   return true;
 };
 
-export const patientGuard = (
-  to: RouteLocationNormalizedGeneric,
-  currentUser: User | null
-) => {
-  if (to.meta.isPatientRoute && currentUser) {
-    const { data: user } = useUserQuery(currentUser.uid);
-    if (user.value?.role != UserRoles.PATIENT) {
-      return { name: "Forbidden" };
+export const patientGuard = (to: RouteLocationNormalizedGeneric, user: any) => {
+  if (to.meta.isPatientRoute && user) {
+    if (user.value.role == UserRoles.PATIENT) {
+      return true;
     }
+
+    return { name: "Forbidden" };
   }
   return true;
 };
 
-export const doctorGuard = (
-  to: RouteLocationNormalizedGeneric,
-  currentUser: User | null
-) => {
-  if (to.meta.isDoctorRoute && currentUser) {
-    const { data: user } = useUserQuery(currentUser.uid);
-    if (user.value?.role != UserRoles.DOCTOR) {
-      return { name: "Forbidden" };
+export const doctorGuard = (to: RouteLocationNormalizedGeneric, user: any) => {
+  if (to.meta.isDoctorRoute && user) {
+    if (user.value.role == UserRoles.DOCTOR) {
+      return true;
     }
+
+    return { name: "Forbidden" };
   }
   return true;
 };

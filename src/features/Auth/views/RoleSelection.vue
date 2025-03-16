@@ -7,11 +7,12 @@ import { zodResolver } from "@primevue/forms/resolvers/zod"
 import { UserRoles } from "../../../models/User.ts";
 import { z } from "zod";
 import { GeneralErrors } from "../../../constants/errors.ts";
-import { useAuthenticatedUser } from "../../../composables/useAuthGuard.ts";
 import { useTypedRouter } from "../../../composables/useTypedRouter.ts";
 import { useAssignRoleAndCreateUserMutation } from "../../../queries/queryUser.ts";
+import { useAuthUser } from "../../../composables/useAuth.ts";
 
-const user = useAuthenticatedUser();
+// Replace async function call with reactive composable
+const { user, isLoading } = useAuthUser();
 const router = useTypedRouter()
 
 const formSchema = z.object({
@@ -30,10 +31,14 @@ const { mutate: assignRoleAndCreateUserDocumentMutation } = useAssignRoleAndCrea
 
 async function onFormSubmit() {
   try {
-    assignRoleAndCreateUserDocumentMutation({ user, role: formValues.role });
+    if (!user.value) {
+      throw new Error("User is not authenticated");
+    }
+
+    assignRoleAndCreateUserDocumentMutation({ user: user.value, role: formValues.role });
     await router.typedPush({
       name: 'Home',
-      params: { userId: user.uid }
+      params: {}
     });
   } catch (error) {
     console.error("Error creating user document:", error);
@@ -49,7 +54,10 @@ async function onFormSubmit() {
       <template #subtitle>Select your role</template>
       />
       <template #content>
-        <Form v-slot="$form" v-model="formValues" :resolver class="flex flex-col gap-4 w-full sm:w-56"
+        <div v-if="isLoading" class="flex justify-center">
+          <i class="pi pi-spin pi-spinner text-2xl"></i>
+        </div>
+        <Form v-else v-slot="$form" v-model="formValues" :resolver class="flex flex-col gap-4 w-full sm:w-56"
           @submit="onFormSubmit">
           <Select v-model="formValues.role" :options="Object.values(UserRoles)" fluid name="role"
             placeholder="Select Role" required />

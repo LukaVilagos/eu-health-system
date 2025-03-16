@@ -1,9 +1,3 @@
 <template>
-  <AuthProvider>
-    <RouterView />
-  </AuthProvider>
+  <RouterView />
 </template>
-
-<script setup lang="ts">
-import AuthProvider from "./features/Auth/components/AuthProvider.vue";
-</script>

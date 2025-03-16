@@ -14,9 +14,7 @@ export type AppRouteName =
 export interface RouteParamsMap {
   SignIn: Record<string, never>;
   RoleSelection: Record<string, never>;
-  Home: {
-    userId: string;
-  };
+  Home: Record<string, never>;
   Forbidden: Record<string, never>;
   NotFound: Record<string, never>;
   Todo: {

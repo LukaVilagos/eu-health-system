@@ -3,7 +3,6 @@ import { Card, Skeleton, Button, InputText } from "primevue";
 import { useDeleteTodoMutation, useTodoQuery, useUpdateTodoMutation } from "../../../queries/queryTodo.ts";
 import { useRoute } from "vue-router";
 import { useTypedRouter } from "../../../composables/useTypedRouter.ts";
-import { useAuthenticatedUser } from "../../../composables/useAuthGuard.ts";
 import { onMounted, ref, watch } from "vue";
 import { Form } from "@primevue/forms";
 
@@ -12,7 +11,6 @@ const router = useTypedRouter();
 
 const todoId = route.params.todoId;
 const { data: todo, isFetching } = useTodoQuery(todoId as string);
-const user = useAuthenticatedUser();
 
 const editMode = ref(false);
 const todoText = ref("");
@@ -38,7 +36,7 @@ const { mutate: updateTodoMutation, isPending: isUpdating } = useUpdateTodoMutat
 
 async function handleDeleteTodo() {
     deleteTodoMutation(todoId as string);
-    router.typedPush({ name: "Home", params: { userId: user.uid } });
+    router.typedPush({ name: "Home", params: {} });
 }
 
 async function handleEditTodo() {

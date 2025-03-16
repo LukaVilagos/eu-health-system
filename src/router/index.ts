@@ -15,6 +15,7 @@ import {
   doctorGuard,
   guestGuard,
   patientGuard,
+  protectedGuard,
   roleSelectionGuard,
 } from "./guards.ts";
 import AuthLayout from "../components/layout/AuthLayout.vue";
@@ -60,7 +61,7 @@ const routes: Readonly<RouteRecordRaw[]> = [
         path: "role-selector",
         component: RoleSelection,
         name: "RoleSelection" as AppRouteName,
-        meta: { ...unprotectRouteMeta },
+        meta: { ...protectRouteMeta },
       },
     ],
   },
@@ -69,7 +70,7 @@ const routes: Readonly<RouteRecordRaw[]> = [
     component: DefaultLayout,
     children: [
       {
-        path: "home/:userId",
+        path: "home",
         component: HomeView,
         name: "Home" as AppRouteName,
         meta: protectRouteMeta,
@@ -129,28 +130,28 @@ export const router = createRouter({
 });
 
 router.beforeEach(async (to, _from) => {
-  const { user, getCurrentlySignedInUser } = useAuth();
-  const currentUser = user?.value ?? (await getCurrentlySignedInUser());
+  const auth = useAuth();
 
-  if (!currentUser) {
-    if (to.meta.isProtected) {
-      return { name: "SignIn" };
-    }
-  }
+  await auth.waitForAuthInit();
 
-  const roleGuardResult = await roleSelectionGuard(to, currentUser);
+  const user = auth.user;
+
+  const protectedGuardResult = protectedGuard(to, user);
+  if (protectedGuardResult !== true) return protectedGuardResult;
+
+  const roleGuardResult = roleSelectionGuard(to, user);
   if (roleGuardResult !== true) return roleGuardResult;
 
-  const authGuardResult = authGuard(to, currentUser);
+  const authGuardResult = authGuard(to, user);
   if (authGuardResult !== true) return authGuardResult;
 
-  const guestGuardResult = guestGuard(to, currentUser);
+  const guestGuardResult = guestGuard(to, user);
   if (guestGuardResult !== true) return guestGuardResult;
 
-  const patientGuardResult = patientGuard(to, currentUser);
+  const patientGuardResult = patientGuard(to, user);
   if (patientGuardResult !== true) return patientGuardResult;
 
-  const doctorGuardResult = doctorGuard(to, currentUser);
+  const doctorGuardResult = doctorGuard(to, user);
   if (doctorGuardResult !== true) return doctorGuardResult;
 
   return true;
