@@ -73,7 +73,7 @@ const layoutOptions = ref(['list', 'grid']);
             <div class="p-4" v-if="isLoadingOrUpdating">
                 <LoadingIndicator message="Loading todos..." />
             </div>
-            <DataView :value="todos" :layout="layout" dataKey="id">
+            <DataView v-else :value="todos" :layout="layout" dataKey="id">
                 <template #header>
                     <div class="flex justify-between items-center">
                         <h2 class="font-bold text-xl">{{ title || 'TODO LIST' }}</h2>

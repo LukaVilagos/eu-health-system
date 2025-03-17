@@ -17,8 +17,8 @@ const { user: authUser } = useAuthUser();
 const currentUserId = computed(() => authUser.value?.uid || '');
 
 const { data: user, isLoading: isUserLoading } = useUserQuery(userId);
-const { data: todos, isLoading: isTodosLoading, refetch } = useTodosByUserIdQuery(userId, currentUserId.value);
-const { data: sharedTodos, isLoading: isSharedTodosLoading } = useSharedTodosQuery(userId);
+const { data: todos, isLoading: isTodosLoading, isFetching: isTodosByUserFetching, refetch } = useTodosByUserIdQuery(userId, currentUserId.value);
+const { data: sharedTodos, isLoading: isSharedTodosLoading, isFetching: isSharedTodosFetching } = useSharedTodosQuery(userId);
 
 const createTodoVisible = ref(false);
 
@@ -56,12 +56,14 @@ defineProps({
             </template>
         </Card>
         <div v-if="!isUserLoading">
-            <TodoList :todos="todos || []" :isLoading="isTodosLoading" :currentUserId="currentUserId" displayMode="list"
-                :showOwner="false" :actions="['add', 'delete']" title="USER TODOS" @add="showCreateDialog" />
+            <TodoList :todos="todos || []" :isLoading="isTodosLoading || isTodosByUserFetching"
+                :currentUserId="currentUserId" displayMode="list" :showOwner="false" :actions="['add', 'delete']"
+                title="USER TODOS" @add="showCreateDialog" />
 
             <div class="mt-4">
-                <TodoList :todos="sharedTodos || []" :isLoading="isSharedTodosLoading" :currentUserId="currentUserId"
-                    displayMode="list" :showOwner="true" :actions="['delete']" title="SHARED WITH USER" />
+                <TodoList :todos="sharedTodos || []" :isLoading="isSharedTodosLoading || isSharedTodosFetching"
+                    :currentUserId="currentUserId" displayMode="list" :showOwner="true" :actions="['delete']"
+                    title="SHARED WITH USER" />
             </div>
         </div>
     </div>
