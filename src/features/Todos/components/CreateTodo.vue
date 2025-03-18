@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { Dialog, InputText, Message, Button, Checkbox } from "primevue";
 import { Form } from "@primevue/forms";
-import { defineEmits, defineProps, ref } from "vue";
+import { ref } from "vue";
 import type { PermissionSchemaType } from "../../../models/Todo";
 import { useCreateTodoMutation } from "../../../queries/queryTodo.ts";
 import ShareTodo from "./ShareTodo.vue";
