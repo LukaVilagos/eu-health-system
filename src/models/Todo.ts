@@ -13,8 +13,13 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/app.ts";
 import { z } from "zod";
-import { getUserDocument, type UserSchemaType } from "./User";
+import {
+  checkIfUserExists,
+  getUserDocument,
+  type UserSchemaType,
+} from "./User";
 import { canViewTodo } from "../utils/todoPermissionHelpers.ts";
+import { DefaultSchema } from "./schemas/DefaultSchema.ts";
 
 export const TODO_COLLECTION_NAME = "todos";
 
@@ -43,14 +48,13 @@ const AccessControlSchema = z.record(
   z.object({ ...PermissionSchema.shape })
 );
 
-export const TodoSchema = z.object({
-  id: z.string(),
+export const TodoSchema = DefaultSchema.extend({
   text: z.string(),
-  userId: z.string(),
+  userId: z.string().refine(async (userId) => await checkIfUserExists(userId), {
+    message: "Invalid userId: User does not exist.",
+  }),
   access: AccessControlSchema.default({}),
   viewerIds: z.array(z.string()).default([]),
-  createdAt: z.date().default(() => new Date()),
-  updatedAt: z.date().default(() => new Date()),
 });
 
 export const TodoWithUserSchema = TodoSchema.extend({
@@ -79,7 +83,7 @@ async function enhanceWithUserData(
 ): Promise<TodoWithUserSchemaType[]> {
   const userCache: Record<string, UserSchemaType | null> = {};
 
-  const enhancedTodos = await Promise.all(
+  return await Promise.all(
     todos.map(async (todo) => {
       if (!userCache[todo.userId]) {
         userCache[todo.userId] = await getUserDocument(todo.userId);
@@ -98,8 +102,6 @@ async function enhanceWithUserData(
       };
     })
   );
-
-  return enhancedTodos;
 }
 
 export async function getAllTodos(): Promise<TodoWithUserSchemaType[]> {

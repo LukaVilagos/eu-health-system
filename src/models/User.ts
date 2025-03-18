@@ -2,6 +2,7 @@ import { z } from "zod";
 import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
 import { db } from "../firebase/app.ts";
 import type { User } from "firebase/auth";
+import { DefaultSchema } from "./schemas/DefaultSchema.ts";
 
 export const USER_COLLECTION_NAME = "users";
 
@@ -10,7 +11,7 @@ export enum UserRoles {
   PATIENT = "Patient",
 }
 
-export const UserSchema = z.object({
+export const UserSchema = DefaultSchema.extend({
   uid: z.string().nonempty(),
   email: z.string().email().nullable(),
   displayName: z.string().nullable(),
@@ -70,16 +71,31 @@ export async function getAllUsers(): Promise<UserSchemaType[]> {
     return querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
-        uid: doc.id,
-        email: data.email,
-        displayName: data.displayName,
-        photoURL: data.photoURL,
-        role: data.role,
+        id: doc.id,
+        uid: data.uid,
+        email: data.email ?? null,
+        displayName: data.displayName ?? null,
+        photoURL: data.photoURL ?? null,
+        role: data.role as UserRoles,
         createdAt: data.createdAt.toDate(),
+        updatedAt: data.updatedAt.toDate(),
+        deletedAt: data.deletedAt ? data.deletedAt.toDate() : null,
       };
     });
   } catch (error) {
     console.error("Error fetching users:", error);
     return [];
+  }
+}
+
+export async function checkIfUserExists(userId: string): Promise<boolean> {
+  try {
+    const userDocRef = doc(db, USER_COLLECTION_NAME, userId);
+    const userDoc = await getDoc(userDocRef);
+
+    return userDoc.exists();
+  } catch (error) {
+    console.error("Error checking if user exists:", error);
+    return false;
   }
 }
