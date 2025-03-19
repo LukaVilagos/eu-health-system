@@ -12,7 +12,7 @@ export function hasPermission(
   // Owner has all permissions
   if (todo.userId === userId) return true;
 
-  const userAccess = todo.access?.[userId];
+  const userAccess = todo.sharedWith?.[userId];
   if (!userAccess) return false;
 
   // Fix type safety by checking permission directly
@@ -66,5 +66,5 @@ export function getUserPermissions(
     ];
   }
 
-  return todo.access[userId]?.permissions || [];
+  return todo.sharedWith[userId]?.permissions || [];
 }

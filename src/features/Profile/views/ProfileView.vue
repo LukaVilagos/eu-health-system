@@ -14,7 +14,7 @@ const route = useTypedRoute<"Profile">();
 const userId = route.typedParams.userId;
 
 const { user: authUser } = useAuthUser();
-const currentUserId = computed(() => authUser.value?.uid || '');
+const currentUserId = computed(() => authUser.value?.id || '');
 
 const { data: user, isLoading: isUserLoading } = useUserQuery(userId);
 const { data: todos, isLoading: isTodosLoading, isFetching: isTodosByUserFetching, refetch } = useTodosByUserIdQuery(userId, currentUserId.value);

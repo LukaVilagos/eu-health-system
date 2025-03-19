@@ -26,7 +26,7 @@ onMounted(async () => {
     if (props.todo) {
         loadingUserData.value = true;
         try {
-            for (const [userId, accessData] of Object.entries(props.todo.access)) {
+            for (const [userId, accessData] of Object.entries(props.todo.sharedWith)) {
                 if (userId === props.todo.userId) continue;
 
                 try {
@@ -74,7 +74,7 @@ const saveChanges = async () => {
     try {
         for (const [userId, permissions] of Object.entries(pendingChanges.value)) {
             if (permissions.length === 0) {
-                await revokePermission({
+                revokePermission({
                     todoId: props.todo.id,
                     userId
                 });

@@ -14,7 +14,7 @@ import UserDisplay from "../../Core/components/UserDisplay.vue";
 const route = useTypedRoute<"Todo">();
 const router = useTypedRouter();
 const { user } = useAuthUser();
-const currentUserId = computed(() => user.value?.uid || '');
+const currentUserId = computed(() => user.value?.id || '');
 
 const todoId = route.typedParams.todoId;
 const { data: todo, isFetching } = useTodoQuery(todoId, currentUserId.value);

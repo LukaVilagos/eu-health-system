@@ -5,7 +5,7 @@ import Navbar from './Navbar.vue';
 
 <template>
     <div>
-        <div class="p-4">
+        <div class="px-4 pt-4">
             <Navbar />
         </div>
         <PageWrapper>

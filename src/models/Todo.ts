@@ -19,7 +19,11 @@ import {
   type UserSchemaType,
 } from "./User";
 import { canViewTodo } from "../utils/todoPermissionHelpers.ts";
-import { DefaultSchema } from "./schemas/DefaultSchema.ts";
+import {
+  CreateDocumentSchema,
+  DefaultSchema,
+} from "./schemas/DefaultSchema.ts";
+import { ensureDate } from "../utils/dateUtils.ts";
 
 export const TODO_COLLECTION_NAME = "todos";
 
@@ -53,7 +57,7 @@ export const TodoSchema = DefaultSchema.extend({
   userId: z.string().refine(async (userId) => await checkIfUserExists(userId), {
     message: "Invalid userId: User does not exist.",
   }),
-  access: AccessControlSchema.default({}),
+  sharedWith: AccessControlSchema.default({}),
   viewerIds: z.array(z.string()).default([]),
 });
 
@@ -67,15 +71,16 @@ export const TodoWithUserSchema = TodoSchema.extend({
     .nullable(),
 });
 
-const createTodoSchema = z.object({
+const TodoCreateSchema = CreateDocumentSchema.extend({
   text: z.string().nonempty(),
   userId: z.string().nonempty(),
   sharedWith: z.record(z.string(), PermissionSchema).optional(),
+  viewerIds: z.array(z.string()).default([]),
 });
 
 export type TodoSchemaType = z.infer<typeof TodoSchema>;
 export type TodoWithUserSchemaType = z.infer<typeof TodoWithUserSchema>;
-export type CreateTodoSchemaType = z.infer<typeof createTodoSchema>;
+export type TodoCreateSchemaType = z.infer<typeof TodoCreateSchema>;
 export type PermissionSchemaType = z.infer<typeof PermissionSchema>;
 
 async function enhanceWithUserData(
@@ -116,14 +121,12 @@ export async function getAllTodos(): Promise<TodoWithUserSchemaType[]> {
     const todos = querySnapshot.docs.map((doc) => {
       const data = doc.data();
 
-      const access: Record<string, any> = {};
-      if (data.access) {
-        Object.keys(data.access).forEach((userId) => {
-          access[userId] = {
-            ...data.access[userId],
-            addedAt: data.access[userId].addedAt?.toDate
-              ? data.access[userId].addedAt.toDate()
-              : new Date(),
+      const sharedWith: Record<string, any> = {};
+      if (data.sharedWith) {
+        Object.keys(data.sharedWith).forEach((userId) => {
+          sharedWith[userId] = {
+            ...data.sharedWith[userId],
+            addedAt: ensureDate(data.sharedWith[userId].addedAt),
           };
         });
       }
@@ -132,14 +135,17 @@ export async function getAllTodos(): Promise<TodoWithUserSchemaType[]> {
         id: doc.id,
         text: data.text,
         userId: data.userId,
-        access: access,
+        sharedWith: sharedWith,
         viewerIds: data.viewerIds || [],
-        createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
-        updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
+        createdAt: ensureDate(data.createdAt),
+        updatedAt: ensureDate(data.updatedAt),
+        deletedAt: data.deletedAt ? ensureDate(data.deletedAt) : null,
       };
     });
 
-    const todosWithValidation = todos.map((todo) => TodoSchema.parse(todo));
+    const todosWithValidation = await Promise.all(
+      todos.map((todo) => TodoSchema.parseAsync(todo))
+    );
     return await enhanceWithUserData(todosWithValidation);
   } catch (error) {
     console.error("Error fetching todos:", error);
@@ -163,14 +169,12 @@ export async function getTodosByUserId(
     const todos = querySnapshot.docs.map((doc) => {
       const data = doc.data();
 
-      const access: Record<string, any> = {};
-      if (data.access) {
-        Object.keys(data.access).forEach((userId) => {
-          access[userId] = {
-            ...data.access[userId],
-            addedAt: data.access[userId].addedAt?.toDate
-              ? data.access[userId].addedAt.toDate()
-              : new Date(),
+      const sharedWith: Record<string, any> = {};
+      if (data.sharedWith) {
+        Object.keys(data.sharedWith).forEach((userId) => {
+          sharedWith[userId] = {
+            ...data.sharedWith[userId],
+            addedAt: ensureDate(data.sharedWith[userId].addedAt),
           };
         });
       }
@@ -179,14 +183,17 @@ export async function getTodosByUserId(
         id: doc.id,
         text: data.text,
         userId: data.userId,
-        access: access,
+        sharedWith: sharedWith,
         viewerIds: data.viewerIds || [],
-        createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
-        updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
+        createdAt: ensureDate(data.createdAt),
+        updatedAt: ensureDate(data.updatedAt),
+        deletedAt: data.deletedAt ? ensureDate(data.deletedAt) : null,
       };
     });
 
-    const todosWithValidation = todos.map((todo) => TodoSchema.parse(todo));
+    const todosWithValidation = await Promise.all(
+      todos.map((todo) => TodoSchema.parseAsync(todo))
+    );
     const filteredTodos = todosWithValidation.filter((todo) =>
       canViewTodo(todo, currentUserId)
     );
@@ -210,14 +217,12 @@ export async function getTodoById(
 
     const data = docSnapshot.data();
 
-    const access: Record<string, any> = {};
-    if (data.access) {
-      Object.keys(data.access).forEach((userId) => {
-        access[userId] = {
-          ...data.access[userId],
-          addedAt: data.access[userId].addedAt?.toDate
-            ? data.access[userId].addedAt.toDate()
-            : new Date(),
+    const sharedWith: Record<string, any> = {};
+    if (data.sharedWith) {
+      Object.keys(data.sharedWith).forEach((userId) => {
+        sharedWith[userId] = {
+          ...data.sharedWith[userId],
+          addedAt: ensureDate(data.sharedWith[userId].addedAt),
         };
       });
     }
@@ -226,13 +231,14 @@ export async function getTodoById(
       id: docSnapshot.id,
       text: data.text,
       userId: data.userId,
-      access: access,
+      sharedWith: sharedWith,
       viewerIds: data.viewerIds || [],
-      createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
-      updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
+      createdAt: ensureDate(data.createdAt),
+      updatedAt: ensureDate(data.updatedAt),
+      deletedAt: data.deletedAt ? ensureDate(data.deletedAt) : null,
     };
 
-    const validatedTodo = TodoSchema.parse(todo);
+    const validatedTodo = await TodoSchema.parseAsync(todo);
     const enhancedTodos = await enhanceWithUserData([validatedTodo]);
     return enhancedTodos[0];
   } catch (error) {
@@ -242,19 +248,17 @@ export async function getTodoById(
 }
 
 export async function createTodo(text: string, userId: string) {
-  createTodoSchema.parse({ text, userId });
-
   const todoData = {
     text,
     userId,
-    access: {},
+    sharedWith: {},
     viewerIds: [],
-    createdAt: new Date(),
-    updatedAt: new Date(),
   };
 
+  const validatedTodoData = await TodoCreateSchema.parseAsync(todoData);
   const todosCollectionRef = collection(db, TODO_COLLECTION_NAME);
-  return await addDoc(todosCollectionRef, todoData);
+
+  return await addDoc(todosCollectionRef, validatedTodoData);
 }
 
 export async function deleteTodo(id: string) {
@@ -283,7 +287,7 @@ export async function grantTodoPermission(
   const todoData = todoDoc.data();
   const currentViewerIds = todoData.viewerIds || [];
   const updateData: Record<string, any> = {
-    [`access.${targetUserId}`]: {
+    [`sharedWith.${targetUserId}`]: {
       permissions,
       addedAt: new Date(),
       addedBy: grantedBy,
@@ -312,7 +316,7 @@ export async function revokeTodoPermission(
 
   const todoData = todoDoc.data();
   const updateData: Record<string, any> = {
-    [`access.${userId}`]: deleteField(),
+    [`sharedWith.${userId}`]: deleteField(),
   };
 
   if (todoData.viewerIds && todoData.viewerIds.includes(userId)) {
@@ -329,11 +333,10 @@ export async function createTodoWithPermissions(
   creatorId: string,
   sharedWith: Record<string, PermissionSchemaType> = {}
 ): Promise<DocumentReference> {
-  const access: Record<string, any> = {};
   const viewerIds: string[] = [];
 
   Object.entries(sharedWith).forEach(([userId, permissions]) => {
-    access[userId] = {
+    sharedWith[userId] = {
       permissions: permissions.permissions,
       addedAt: new Date(),
       addedBy: creatorId,
@@ -344,19 +347,17 @@ export async function createTodoWithPermissions(
     }
   });
 
-  createTodoSchema.parse({ text, userId: creatorId });
-
   const todoData = {
     text,
     userId: creatorId,
-    access,
+    sharedWith,
     viewerIds,
-    createdAt: new Date(),
-    updatedAt: new Date(),
   };
 
+  const validatedTodoData = await TodoCreateSchema.parseAsync(todoData);
   const todosCollectionRef = collection(db, TODO_COLLECTION_NAME);
-  return await addDoc(todosCollectionRef, todoData);
+
+  return await addDoc(todosCollectionRef, validatedTodoData);
 }
 
 export async function getTodosSharedWithUser(
@@ -378,14 +379,12 @@ export async function getTodosSharedWithUser(
     const todos = querySnapshot.docs.map((doc) => {
       const data = doc.data();
 
-      const access: Record<string, any> = {};
-      if (data.access) {
-        Object.keys(data.access).forEach((accessUserId) => {
-          access[accessUserId] = {
-            ...data.access[accessUserId],
-            addedAt: data.access[accessUserId].addedAt?.toDate
-              ? data.access[accessUserId].addedAt.toDate()
-              : new Date(),
+      const sharedWith: Record<string, any> = {};
+      if (data.sharedWith) {
+        Object.keys(data.sharedWith).forEach((accessUserId) => {
+          sharedWith[accessUserId] = {
+            ...data.sharedWith[accessUserId],
+            addedAt: ensureDate(data.sharedWith[accessUserId].addedAt),
           };
         });
       }
@@ -394,10 +393,11 @@ export async function getTodosSharedWithUser(
         id: doc.id,
         text: data.text,
         userId: data.userId,
-        access: access,
+        sharedWith: sharedWith,
         viewerIds: data.viewerIds || [],
-        createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
-        updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
+        createdAt: ensureDate(data.createdAt),
+        updatedAt: ensureDate(data.updatedAt),
+        deletedAt: data.deletedAt ? ensureDate(data.deletedAt) : null,
       };
     });
 

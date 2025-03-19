@@ -87,9 +87,9 @@ const searchUsers = async (event: { query: string }) => {
         const results = await searchUsersByEmail(event.query);
 
         searchResults.value = results.filter(user => {
-            if (user.uid === props.ownerId) return false;
-            if (sharedUsers.value[user.uid]) return false;
-            if (props.existingUserIds.includes(user.uid)) return false;
+            if (user.id === props.ownerId) return false;
+            if (sharedUsers.value[user.id]) return false;
+            if (props.existingUserIds.includes(user.id)) return false;
             return true;
         });
 
@@ -122,17 +122,17 @@ const addUser = async () => {
 
         const user = results[0];
 
-        if (user.uid === props.ownerId) {
+        if (user.id === props.ownerId) {
             searchError.value = 'Cannot add the owner to permissions';
             return;
         }
 
-        if (sharedUsers.value[user.uid] || props.existingUserIds.includes(user.uid)) {
+        if (sharedUsers.value[user.id] || props.existingUserIds.includes(user.id)) {
             searchError.value = 'This user has already been added';
             return;
         }
 
-        const userId = user.uid;
+        const userId = user.id;
         const defaultPermissions = [PermissionLevel.VIEW];
 
         sharedUsers.value[userId] = {
@@ -163,17 +163,17 @@ const addUser = async () => {
 };
 
 const selectUser = (user: UserSchemaType) => {
-    if (user.uid === props.ownerId) {
+    if (user.id === props.ownerId) {
         searchError.value = 'Cannot add the owner to permissions';
         return;
     }
 
-    if (sharedUsers.value[user.uid] || props.existingUserIds.includes(user.uid)) {
+    if (sharedUsers.value[user.id] || props.existingUserIds.includes(user.id)) {
         searchError.value = 'This user has already been added';
         return;
     }
 
-    const userId = user.uid;
+    const userId = user.id;
     const defaultPermissions = [PermissionLevel.VIEW];
 
     sharedUsers.value[userId] = {

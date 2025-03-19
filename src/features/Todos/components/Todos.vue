@@ -7,7 +7,7 @@ import TodoList from "./TodoList.vue";
 
 const visible = ref(false);
 const { user } = useAuthUser();
-const currentUserId = computed(() => user.value?.uid || '');
+const currentUserId = computed(() => user.value?.id || '');
 
 const { data: todos, isLoading, isFetching, refetch } = useTodosQuery(currentUserId.value);
 
@@ -29,5 +29,5 @@ const handleTodoCreated = () => {
   <TodoList :todos="todos" :isLoading="isLoading || isFetching" :currentUserId="currentUserId" displayMode="table"
     :showOwner="true" :actions="['add', 'delete']" title="TODO TABLE" @add="showCreateDialog" />
 
-  <CreateTodo :visible="visible" :userId="user?.uid ?? ''" @close="hideDialog" @submit="handleTodoCreated" />
+  <CreateTodo :visible="visible" :userId="user?.id ?? ''" @close="hideDialog" @submit="handleTodoCreated" />
 </template>

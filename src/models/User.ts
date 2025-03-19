@@ -12,12 +12,10 @@ export enum UserRoles {
 }
 
 export const UserSchema = DefaultSchema.extend({
-  uid: z.string().nonempty(),
   email: z.string().email().nullable(),
   displayName: z.string().nullable(),
   photoURL: z.string().nullable(),
   role: z.nativeEnum(UserRoles),
-  createdAt: z.date(),
 });
 
 export type UserSchemaType = z.infer<typeof UserSchema>;
@@ -27,12 +25,11 @@ export async function assignRoleAndCreateUserDocument(
   role: string
 ) {
   const userData = {
-    uid: user.uid,
+    id: user.uid,
     email: user.email,
     displayName: user.displayName,
     photoURL: user.photoURL,
     role: role,
-    createdAt: new Date(),
   };
 
   const validatedData = UserSchema.parse(userData);
@@ -72,7 +69,6 @@ export async function getAllUsers(): Promise<UserSchemaType[]> {
       const data = doc.data();
       return {
         id: doc.id,
-        uid: data.uid,
         email: data.email ?? null,
         displayName: data.displayName ?? null,
         photoURL: data.photoURL ?? null,
