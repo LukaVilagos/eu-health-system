@@ -1,11 +1,4 @@
 import { z } from "zod";
-import { DefaultSchema } from "./schemas/DefaultSchema";
-import {
-  checkIfUserExists,
-  getUserDocument,
-  UserRoles,
-  type UserSchemaType,
-} from "./User";
 import {
   addDoc,
   collection,
@@ -14,7 +7,14 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { db } from "../firebase/app";
+import { DefaultSchema } from "../../../services/shared/schemas/DefaultSchema";
+import {
+  checkIfUserExists,
+  getUserDocument,
+  UserRoles,
+  type UserSchemaType,
+} from "../../user/models/User";
+import { db } from "../../../services/api/firebase";
 
 export const APPOINTMENT_COLLECTION_NAME = "appointments";
 
