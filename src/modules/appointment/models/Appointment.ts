@@ -2,19 +2,29 @@ import { z } from "zod";
 import {
   addDoc,
   collection,
+  doc,
+  DocumentReference,
+  getDoc,
   getDocs,
   Query,
   query,
   where,
+  type DocumentData,
 } from "firebase/firestore";
 import { DefaultSchema } from "../../../services/shared/schemas/DefaultSchema";
 import {
   checkIfUserExists,
   getUserDocument,
   UserRoles,
+  UserSchema,
   type UserSchemaType,
 } from "../../user/models/User";
 import { db } from "../../../services/api/firebase";
+import {
+  AppointmentReportSchema,
+  checkIfReportExists,
+  getReportByAppointmentId,
+} from "./AppointmentReport";
 
 export const APPOINTMENT_COLLECTION_NAME = "appointments";
 
@@ -40,7 +50,6 @@ export enum AppointmentUrgency {
 }
 
 export const AppointmentSchema = DefaultSchema.extend({
-  // Participant IDs with validation
   doctorId: z
     .string()
     .refine(async (userId) => await checkIfUserExists(userId), {
@@ -52,13 +61,11 @@ export const AppointmentSchema = DefaultSchema.extend({
       message: "Invalid patientId: Patient does not exist.",
     }),
 
-  // Schedule information
   reservationDate: z.date().refine((date) => date > new Date(), {
     message: "Appointment date must be in the future",
   }),
-  reservationDuration: z.number().int().positive().default(30), // minutes
+  reservationDuration: z.number().int().positive().default(30),
 
-  // Status and type information
   reservationStatus: z
     .nativeEnum(AppointmentStatus)
     .default(AppointmentStatus.PENDING),
@@ -69,63 +76,83 @@ export const AppointmentSchema = DefaultSchema.extend({
     .nativeEnum(AppointmentUrgency)
     .default(AppointmentUrgency.ROUTINE),
 
-  // Medical information
   reasonForVisit: z.string().min(5).max(500),
   symptoms: z.array(z.string()).optional(),
   patientNotes: z.string().max(1000).optional(),
-  doctorNotes: z.string().max(2000).optional(),
   isFollowUp: z.boolean().default(false),
   previousAppointmentId: z.string().optional(),
 
-  // Location information
-  location: z.string().optional(), // Physical location or "Online"
+  location: z.string().optional(),
   roomNumber: z.string().optional(),
   videoCallLink: z.string().url().optional(),
 
-  // Administrative
-  createdByUser: z.string(), // UserId of who created the appointment
+  createdByUser: z.string(),
   cancellationReason: z.string().optional(),
   cancellationDate: z.date().optional(),
   cancelledByUserId: z.string().optional(),
   rescheduleCount: z.number().int().nonnegative().default(0),
 
-  // Check-in and completion
   checkedIn: z.boolean().default(false),
   checkedInTime: z.date().optional(),
   completedTime: z.date().optional(),
 
-  // Communication
   reminderSent: z.boolean().default(false),
   lastReminderDate: z.date().optional(),
 
-  // Billing/Insurance (basic fields)
   insuranceVerified: z.boolean().default(false),
   estimatedCost: z.number().optional(),
   actualCost: z.number().optional(),
   isPaid: z.boolean().default(false),
 
-  // Metadata for filtering/searching
   specialtyRequired: z.string().optional(),
+
+  reportId: z
+    .string()
+    .refine(async (reportId) => await checkIfReportExists(reportId), {
+      message: "Invalid reportId: Report does not exist.",
+    }),
 });
 
 export const AppointmentWithUserSchema = AppointmentSchema.extend({
-  doctorId: z.object({
-    uid: z.string(),
-    displayName: z.string(),
-    photoUrl: z.string().optional(),
-    email: z.string(),
-  }),
-  patientId: z.object({
-    uid: z.string(),
-    displayName: z.string(),
-    photoUrl: z.string().optional(),
-    email: z.string(),
-  }),
+  doctorId: UserSchema,
+  patientId: UserSchema,
+});
+
+export const AppointmentWithReportSchema = AppointmentWithUserSchema.extend({
+  report: AppointmentReportSchema,
+});
+
+export const AppointmentCreateSchema = AppointmentSchema.omit({
+  id: true,
+  reservationStatus: true,
+  cancellationReason: true,
+  cancellationDate: true,
+  cancelledByUserId: true,
+  checkedIn: true,
+  checkedInTime: true,
+  completedTime: true,
+  reminderSent: true,
+  lastReminderDate: true,
+  insuranceVerified: true,
+  estimatedCost: true,
+  actualCost: true,
+  isPaid: true,
 });
 
 export type AppointmentSchemaType = z.infer<typeof AppointmentSchema>;
+export type AppointmentCreateSchemaType = z.infer<
+  typeof AppointmentCreateSchema
+>;
+export type AppointmentWithUserSchemaType = z.infer<
+  typeof AppointmentWithUserSchema
+>;
+export type AppointmentWithReportSchemaType = z.infer<
+  typeof AppointmentWithReportSchema
+>;
 
-async function enhanceWithUserData(appointments: AppointmentSchemaType[]) {
+async function enhanceWithUserData(
+  appointments: AppointmentSchemaType[]
+): Promise<AppointmentWithUserSchemaType[]> {
   const userCache: Record<string, UserSchemaType | null> = {};
 
   return await Promise.all(
@@ -140,10 +167,33 @@ async function enhanceWithUserData(appointments: AppointmentSchemaType[]) {
         userCache[patientId] = await getUserDocument(patientId);
       }
 
+      if (!userCache[doctorId] || !userCache[patientId]) {
+        throw new Error("Doctor or Patient data is missing");
+      }
+
       return {
         ...appointment,
-        doctorId: userCache[doctorId],
-        patientId: userCache[patientId],
+        doctorId: userCache[doctorId]!,
+        patientId: userCache[patientId]!,
+      };
+    })
+  );
+}
+
+async function enhanceWithReportData(
+  appointments: AppointmentWithUserSchemaType[]
+): Promise<AppointmentWithReportSchemaType[]> {
+  return await Promise.all(
+    appointments.map(async (appointment) => {
+      const report = await getReportByAppointmentId(appointment.id);
+
+      if (!report) {
+        throw new Error("Report data is missing");
+      }
+
+      return {
+        ...appointment,
+        report: report,
       };
     })
   );
@@ -151,8 +201,11 @@ async function enhanceWithUserData(appointments: AppointmentSchemaType[]) {
 
 export async function getAppointmentsForUser(
   userId: string,
-  userRole: UserRoles
-) {
+  userRole: UserRoles,
+  includeReports: boolean = false
+): Promise<
+  AppointmentWithUserSchemaType[] | AppointmentWithReportSchemaType[]
+> {
   try {
     const appointmentCollectionRef = collection(
       db,
@@ -175,14 +228,28 @@ export async function getAppointmentsForUser(
     const appointmentsWithValidation = appointments.docs.map((appointment) =>
       AppointmentSchema.parse(appointment.data())
     );
-    return await enhanceWithUserData(appointmentsWithValidation);
+
+    const enhancedAppointments = await enhanceWithUserData(
+      appointmentsWithValidation
+    );
+
+    if (includeReports) {
+      return await enhanceWithReportData(enhancedAppointments);
+    }
+
+    return enhancedAppointments;
   } catch (error) {
     console.error("Error getting appointments for user:", error);
     throw error;
   }
 }
 
-export async function getAppointmentById(appointmentId: string) {
+export async function getAppointmentById(
+  appointmentId: string,
+  includeReport: boolean = false
+): Promise<
+  AppointmentWithUserSchemaType | AppointmentWithReportSchemaType | null
+> {
   try {
     const appointmentCollectionRef = collection(
       db,
@@ -197,7 +264,13 @@ export async function getAppointmentById(appointmentId: string) {
 
     const appointment = appointments.docs[0].data();
     const validatedAppointment = AppointmentSchema.parse(appointment);
-    return await enhanceWithUserData([validatedAppointment]);
+    let enhancedAppointment = await enhanceWithUserData([validatedAppointment]);
+
+    if (includeReport) {
+      enhancedAppointment = await enhanceWithReportData(enhancedAppointment);
+    }
+
+    return enhancedAppointment[0];
   } catch (error) {
     console.error("Error getting appointment by ID:", error);
     throw error;
@@ -206,15 +279,36 @@ export async function getAppointmentById(appointmentId: string) {
 
 export async function createAppointment(
   appointmentData: AppointmentSchemaType
-) {
+): Promise<DocumentReference<DocumentData>> {
   try {
     const appointmentCollectionRef = collection(
       db,
       APPOINTMENT_COLLECTION_NAME
     );
-    return await addDoc(appointmentCollectionRef, appointmentData);
+
+    const validatedAppointmentData =
+      AppointmentCreateSchema.parse(appointmentData);
+
+    return await addDoc(appointmentCollectionRef, validatedAppointmentData);
   } catch (error) {
     console.error("Error creating appointment:", error);
+    throw error;
+  }
+}
+
+export async function checkIfAppointmentExists(
+  appointmentId: string
+): Promise<boolean> {
+  try {
+    const appointmentCollectionRef = doc(
+      db,
+      APPOINTMENT_COLLECTION_NAME,
+      appointmentId
+    );
+    const appointmentDoc = await getDoc(appointmentCollectionRef);
+    return appointmentDoc.exists();
+  } catch (error) {
+    console.error("Error checking if appointment exists:", error);
     throw error;
   }
 }
