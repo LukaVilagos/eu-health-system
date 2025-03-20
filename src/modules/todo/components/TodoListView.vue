@@ -2,10 +2,10 @@
 import { Button } from "primevue";
 import { computed } from "vue";
 import { createTypedLink } from "../../../router/hooks/useTypedRoute.ts";
-import TypedRouterLink from "../../Core/components/TypedRouterLink.vue";
-import UserDisplay from "../../Core/components/UserDisplay.vue";
 import type { TodoWithUserSchemaType } from "../models/Todo.ts";
 import { canDeleteTodo, canViewTodo } from "../utils/todoPermissionHelpers.ts";
+import TypedRouterLink from "../../../components/base/TypedRouterLink.vue";
+import UserDisplay from "../../user/components/UserDisplay.vue";
 
 const props = defineProps({
     todos: {

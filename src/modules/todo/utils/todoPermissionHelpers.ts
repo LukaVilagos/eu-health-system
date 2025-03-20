@@ -1,5 +1,4 @@
-import { PermissionLevel } from "../modules/todo/models/Todo";
-import type { TodoSchemaType } from "../modules/todo/models/Todo";
+import { PermissionLevel, type TodoSchemaType } from "../models/Todo";
 
 /**
  * Checks if a user has specific permission for a todo

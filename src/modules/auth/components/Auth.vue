@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { Button, ProgressSpinner } from "primevue"
-import { useAuth } from "../hooks/useAuth.ts";
+import { useAuth } from "../hooks/useAuthHooks";
 
 const { user, isLoading, signIn } = useAuth()
 </script>

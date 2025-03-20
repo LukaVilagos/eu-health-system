@@ -2,7 +2,7 @@
 import { DataView, Button, Card, SelectButton } from "primevue";
 import { computed, ref } from "vue";
 import type { TodoWithUserSchemaType } from "../models/Todo.ts";
-import LoadingIndicator from "../../Core/components/LoadingIndicator.vue";
+import LoadingIndicator from '../../../components/base/LoadingIndicator.vue';
 import TodoTableView from "./TodoTableView.vue";
 import TodoListView from "./TodoListView.vue";
 import TodoGridView from "./TodoGridView.vue";

@@ -19,7 +19,6 @@ export async function searchUsersByEmail(
 
     const querySnapshot = await getDocs(q);
 
-    console.log(querySnapshot.docs);
     return querySnapshot.docs.map(
       (doc) =>
         ({

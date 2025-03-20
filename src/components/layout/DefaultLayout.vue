@@ -1,6 +1,6 @@
 <script setup>
-import PageWrapper from '../ui/PageWrapper.vue';
 import Navbar from '../base/Navbar.vue';
+import PageWrapper from '../base/PageWrapper.vue';
 </script>
 
 <template>

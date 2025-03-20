@@ -5,11 +5,11 @@ import { useTypedRouter } from "../../../router/hooks/useTypedRouter.ts";
 import { onMounted, ref, watch, computed } from "vue";
 import { Form } from "@primevue/forms";
 import TodoPermissions from "../components/TodoPermissions.vue";
-import LoadingIndicator from "../../Core/components/LoadingIndicator.vue";
-import UserDisplay from "../../Core/components/UserDisplay.vue";
 import { useAuthUser } from "../../auth/hooks/useAuthHooks.ts";
 import { useDeleteTodoMutation, useTodoQuery, useUpdateTodoMutation } from "../hooks/useTodoHooks.ts";
 import { canDeleteTodo, canEditTodo } from "../utils/todoPermissionHelpers.ts";
+import LoadingIndicator from "../../../components/base/LoadingIndicator.vue";
+import UserDisplay from "../../user/components/UserDisplay.vue";
 
 const route = useTypedRoute<"Todo">();
 const router = useTypedRouter();

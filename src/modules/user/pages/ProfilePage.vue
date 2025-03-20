@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { Card } from 'primevue';
-import LoadingIndicator from '../../Core/components/LoadingIndicator.vue';
-import UserDisplay from '../../Core/components/UserDisplay.vue';
-import TodoList from '../../Todos/components/TodoList.vue';
-import CreateTodo from '../../Todos/components/CreateTodo.vue';
 import { useTypedRoute } from '../../../router/hooks/useTypedRoute';
 import { useAuthUser } from '../../auth/hooks/useAuthHooks';
 import { useUserQuery } from '../hooks/useUserHooks';
 import { useSharedTodosQuery, useTodosByUserIdQuery } from '../../todo/hooks/useTodoHooks';
+import LoadingIndicator from '../../../components/base/LoadingIndicator.vue';
+import UserDisplay from '../components/UserDisplay.vue';
+import TodoList from '../../todo/components/TodoList.vue';
+import CreateTodo from '../../todo/components/CreateTodo.vue';
 
 const route = useTypedRoute<"Profile">();
 const userId = route.typedParams.userId;

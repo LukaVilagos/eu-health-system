@@ -4,8 +4,8 @@ import { Checkbox, Button, Message, AutoComplete, ProgressSpinner } from 'primev
 import type { PermissionSchemaType } from '../models/Todo';
 import { PermissionLevel } from '../models/Todo';
 import { searchUsersByEmail } from '../../user/utils/userSearch';
-import type { UserSchemaType } from '../../../models/User';
-import { getUserDocument } from '../../../models/User';
+import { type UserSchemaType } from '../../user/models/User';
+import { useUserQuery } from '../../user/hooks/useUserHooks';
 
 const props = defineProps({
     modelValue: {
@@ -55,13 +55,27 @@ watch(() => props.modelValue, async (newValue) => {
         for (const [userId, data] of Object.entries(newValue)) {
             if (!sharedUsers.value[userId]) {
                 try {
-                    const userData = await getUserDocument(userId);
+                    // Use useUserQuery instead of getUserDocument directly
+                    const userQuery = useUserQuery(userId);
+                    // Wait for user data to load
+                    const userData = userQuery.data.value;
 
-                    sharedUsers.value[userId] = {
-                        email: userData?.email || '',
-                        displayName: userData?.displayName || null,
-                        permissions: data.permissions
-                    };
+                    if (userData) {
+                        sharedUsers.value[userId] = {
+                            email: userData.email || '',
+                            displayName: userData.displayName || null,
+                            permissions: data.permissions
+                        };
+                    } else if (userQuery.error.value) {
+                        console.error(`Error fetching user data for ${userId}:`, userQuery.error.value);
+                        sharedUsers.value[userId] = {
+                            email: '',
+                            displayName: 'Unknown User',
+                            permissions: data.permissions
+                        };
+                    }
+
+                    selectedPermissions.value[userId] = [...data.permissions];
                 } catch (error) {
                     console.error(`Error fetching user data for ${userId}:`, error);
                     sharedUsers.value[userId] = {
@@ -69,9 +83,8 @@ watch(() => props.modelValue, async (newValue) => {
                         displayName: 'Unknown User',
                         permissions: data.permissions
                     };
+                    selectedPermissions.value[userId] = [...data.permissions];
                 }
-
-                selectedPermissions.value[userId] = [...data.permissions];
             }
         }
     }

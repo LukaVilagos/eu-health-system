@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import Todos from "../../Todos/components/Todos.vue";
+import Todos from '../modules/todo/components/Todos.vue';
+
 </script>\
 
 <template>

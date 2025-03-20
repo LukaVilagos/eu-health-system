@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { Button, Card, Message, Select } from "primevue";
 import { Form } from "@primevue/forms";
-import PageWrapper from "../../../components/ui/PageWrapper.vue";
 import { reactive, ref } from "vue";
 import { zodResolver } from "@primevue/forms/resolvers/zod"
 import { z } from "zod";
@@ -10,6 +9,7 @@ import { useTypedRouter } from "../../../router/hooks/useTypedRouter.ts";
 import { useAssignRoleAndCreateUserMutation } from "../../user/hooks/useUserHooks.ts";
 import { useAuthUser } from "../hooks/useAuthHooks.ts";
 import { UserRoles } from "../../user/models/User.ts";
+import PageWrapper from "../../../components/base/PageWrapper.vue";
 
 const { user, isLoading } = useAuthUser();
 const router = useTypedRouter()

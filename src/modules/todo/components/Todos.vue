@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { ref, computed } from "vue";
-import { useTodosQuery } from "../../../queries/queryTodo.ts";
 import CreateTodo from "./CreateTodo.vue";
-import { useAuthUser } from "../../auth/hooks/useAuth.ts";
 import TodoList from "./TodoList.vue";
+import { useAuthUser } from "../../auth/hooks/useAuthHooks";
+import { useTodosQuery } from "../hooks/useTodoHooks";
 
 const visible = ref(false);
 const { user } = useAuthUser();
