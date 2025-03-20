@@ -11,7 +11,7 @@ export type AppRouteName =
   | "Patient"
   | "Doctor";
 
-export interface RouteParamsMap {
+export type RouteParamsMap = {
   SignIn: Record<string, never>;
   RoleSelection: Record<string, never>;
   Home: Record<string, never>;
@@ -25,15 +25,15 @@ export interface RouteParamsMap {
   };
   Patient: Record<string, never>;
   Doctor: Record<string, never>;
-}
+};
 
 export type ParamsFor<RouteName extends AppRouteName> =
   RouteParamsMap[RouteName];
 
-export interface TypedRouteLocation {
+export type TypedRouteLocation = {
   name: AppRouteName;
   params?: RouteParams;
-}
+};
 
 export type TypedRouteLocationWithParams<T extends AppRouteName> = {
   name: T;

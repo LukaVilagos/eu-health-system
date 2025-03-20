@@ -1,14 +1,8 @@
-/**
- * Interface representing a Firestore timestamp
- */
-export interface FirestoreTimestamp {
+export type FirestoreTimestamp = {
   seconds: number;
   nanoseconds: number;
-}
+};
 
-/**
- * Checks if a value is a Firestore timestamp
- */
 export function isFirestoreTimestamp(value: any): value is FirestoreTimestamp {
   return (
     typeof value === "object" &&
@@ -20,9 +14,6 @@ export function isFirestoreTimestamp(value: any): value is FirestoreTimestamp {
   );
 }
 
-/**
- * Converts a Firestore timestamp to a JavaScript Date object
- */
 export function toDate(value: any): Date {
   if (value instanceof Date) {
     return value;
@@ -36,12 +27,10 @@ export function toDate(value: any): Date {
     return value.toDate();
   }
 
-  // If it's a valid timestamp (number), convert it to a date
   if (typeof value === "number") {
     return new Date(value);
   }
 
-  // If it's a string, try to parse it
   if (typeof value === "string") {
     const date = new Date(value);
     if (!isNaN(date.getTime())) {
@@ -49,13 +38,9 @@ export function toDate(value: any): Date {
     }
   }
 
-  // Default to current date if value is invalid
   return new Date();
 }
 
-/**
- * Safely converts any date-like value to a Date object
- */
 export function ensureDate(value: any): Date {
   if (value === null || value === undefined) {
     return new Date();
@@ -64,9 +49,6 @@ export function ensureDate(value: any): Date {
   return toDate(value);
 }
 
-/**
- * Formats a date as ISO string (or another standard format)
- */
 export function formatDate(date: Date | any): string {
   const safeDate = ensureDate(date);
   return safeDate.toISOString();

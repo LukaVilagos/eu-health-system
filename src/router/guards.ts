@@ -1,6 +1,6 @@
 import type { RouteLocationNormalizedGeneric } from "vue-router";
-import { UserRoles } from "../models/User";
-import type { AuthUser } from "../stores/authStore";
+import type { AuthUser } from "../modules/auth/stores/authStore";
+import { UserRoles } from "../modules/user/models/User";
 
 export const protectedGuard = (
   to: RouteLocationNormalizedGeneric,
