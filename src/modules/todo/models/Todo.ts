@@ -340,7 +340,9 @@ export async function getTodosSharedWithUser(
 
     const todos = querySnapshot.docs.map(processTodoDocument);
 
-    const todosWithValidation = todos.map((todo) => TodoSchema.parse(todo));
+    const todosWithValidation = await Promise.all(
+      todos.map((todo) => TodoSchema.parseAsync(todo))
+    );
     return await enhanceWithUserData(todosWithValidation);
   } catch (error) {
     console.error("Error fetching shared todos:", error);
