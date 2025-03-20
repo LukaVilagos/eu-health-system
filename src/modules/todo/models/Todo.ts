@@ -10,6 +10,8 @@ import {
   where,
   deleteField,
   DocumentReference,
+  QueryDocumentSnapshot,
+  type DocumentData,
 } from "firebase/firestore";
 import { ensureDate } from "../../../utils/dateUtils.ts";
 import { z } from "zod";
@@ -81,6 +83,7 @@ const TodoCreateSchema = CreateDocumentSchema.extend({
 export type TodoSchemaType = z.infer<typeof TodoSchema>;
 export type TodoWithUserSchemaType = z.infer<typeof TodoWithUserSchema>;
 export type TodoCreateSchemaType = z.infer<typeof TodoCreateSchema>;
+export type AccessControlSchemaType = z.infer<typeof AccessControlSchema>;
 export type PermissionSchemaType = z.infer<typeof PermissionSchema>;
 
 async function enhanceWithUserData(
@@ -109,6 +112,33 @@ async function enhanceWithUserData(
   );
 }
 
+function processTodoDocument(
+  doc: QueryDocumentSnapshot<DocumentData>
+): TodoSchemaType {
+  const data = doc.data();
+
+  const sharedWith: Record<string, PermissionSchemaType> = {};
+  if (data.sharedWith) {
+    Object.keys(data.sharedWith).forEach((userId) => {
+      sharedWith[userId] = {
+        ...data.sharedWith[userId],
+        addedAt: ensureDate(data.sharedWith[userId].addedAt),
+      };
+    });
+  }
+
+  return {
+    id: doc.id,
+    text: data.text,
+    userId: data.userId,
+    sharedWith: sharedWith,
+    viewerIds: data.viewerIds || [],
+    createdAt: ensureDate(data.createdAt),
+    updatedAt: ensureDate(data.updatedAt),
+    deletedAt: data.deletedAt ? ensureDate(data.deletedAt) : null,
+  };
+}
+
 export async function getAllTodos(): Promise<TodoWithUserSchemaType[]> {
   try {
     const todosCollectionRef = collection(db, TODO_COLLECTION_NAME);
@@ -118,30 +148,7 @@ export async function getAllTodos(): Promise<TodoWithUserSchemaType[]> {
       return [];
     }
 
-    const todos = querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-
-      const sharedWith: Record<string, any> = {};
-      if (data.sharedWith) {
-        Object.keys(data.sharedWith).forEach((userId) => {
-          sharedWith[userId] = {
-            ...data.sharedWith[userId],
-            addedAt: ensureDate(data.sharedWith[userId].addedAt),
-          };
-        });
-      }
-
-      return {
-        id: doc.id,
-        text: data.text,
-        userId: data.userId,
-        sharedWith: sharedWith,
-        viewerIds: data.viewerIds || [],
-        createdAt: ensureDate(data.createdAt),
-        updatedAt: ensureDate(data.updatedAt),
-        deletedAt: data.deletedAt ? ensureDate(data.deletedAt) : null,
-      };
-    });
+    const todos = querySnapshot.docs.map(processTodoDocument);
 
     const todosWithValidation = await Promise.all(
       todos.map((todo) => TodoSchema.parseAsync(todo))
@@ -166,30 +173,7 @@ export async function getTodosByUserId(
       return [];
     }
 
-    const todos = querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-
-      const sharedWith: Record<string, any> = {};
-      if (data.sharedWith) {
-        Object.keys(data.sharedWith).forEach((userId) => {
-          sharedWith[userId] = {
-            ...data.sharedWith[userId],
-            addedAt: ensureDate(data.sharedWith[userId].addedAt),
-          };
-        });
-      }
-
-      return {
-        id: doc.id,
-        text: data.text,
-        userId: data.userId,
-        sharedWith: sharedWith,
-        viewerIds: data.viewerIds || [],
-        createdAt: ensureDate(data.createdAt),
-        updatedAt: ensureDate(data.updatedAt),
-        deletedAt: data.deletedAt ? ensureDate(data.deletedAt) : null,
-      };
-    });
+    const todos = querySnapshot.docs.map(processTodoDocument);
 
     const todosWithValidation = await Promise.all(
       todos.map((todo) => TodoSchema.parseAsync(todo))
@@ -208,36 +192,14 @@ export async function getTodoById(
   id: string
 ): Promise<TodoWithUserSchemaType | null> {
   try {
-    const todosCollectionRef = doc(db, TODO_COLLECTION_NAME, id);
-    const docSnapshot = await getDoc(todosCollectionRef);
+    const todoDocRef = doc(db, TODO_COLLECTION_NAME, id);
+    const docSnapshot = await getDoc(todoDocRef);
 
     if (!docSnapshot.exists()) {
       return null;
     }
 
-    const data = docSnapshot.data();
-
-    const sharedWith: Record<string, any> = {};
-    if (data.sharedWith) {
-      Object.keys(data.sharedWith).forEach((userId) => {
-        sharedWith[userId] = {
-          ...data.sharedWith[userId],
-          addedAt: ensureDate(data.sharedWith[userId].addedAt),
-        };
-      });
-    }
-
-    const todo = {
-      id: docSnapshot.id,
-      text: data.text,
-      userId: data.userId,
-      sharedWith: sharedWith,
-      viewerIds: data.viewerIds || [],
-      createdAt: ensureDate(data.createdAt),
-      updatedAt: ensureDate(data.updatedAt),
-      deletedAt: data.deletedAt ? ensureDate(data.deletedAt) : null,
-    };
-
+    const todo = processTodoDocument(docSnapshot);
     const validatedTodo = await TodoSchema.parseAsync(todo);
     const enhancedTodos = await enhanceWithUserData([validatedTodo]);
     return enhancedTodos[0];
@@ -284,9 +246,9 @@ export async function grantTodoPermission(
     throw new Error("Todo not found");
   }
 
-  const todoData = todoDoc.data();
+  const todoData = processTodoDocument(todoDoc);
   const currentViewerIds = todoData.viewerIds || [];
-  const updateData: Record<string, any> = {
+  const updateData: Partial<TodoCreateSchemaType> = {
     [`sharedWith.${targetUserId}`]: {
       permissions,
       addedAt: new Date(),
@@ -315,7 +277,7 @@ export async function revokeTodoPermission(
   }
 
   const todoData = todoDoc.data();
-  const updateData: Record<string, any> = {
+  const updateData: Partial<TodoCreateSchemaType> = {
     [`sharedWith.${userId}`]: deleteField(),
   };
 
@@ -376,30 +338,7 @@ export async function getTodosSharedWithUser(
       return [];
     }
 
-    const todos = querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-
-      const sharedWith: Record<string, any> = {};
-      if (data.sharedWith) {
-        Object.keys(data.sharedWith).forEach((accessUserId) => {
-          sharedWith[accessUserId] = {
-            ...data.sharedWith[accessUserId],
-            addedAt: ensureDate(data.sharedWith[accessUserId].addedAt),
-          };
-        });
-      }
-
-      return {
-        id: doc.id,
-        text: data.text,
-        userId: data.userId,
-        sharedWith: sharedWith,
-        viewerIds: data.viewerIds || [],
-        createdAt: ensureDate(data.createdAt),
-        updatedAt: ensureDate(data.updatedAt),
-        deletedAt: data.deletedAt ? ensureDate(data.deletedAt) : null,
-      };
-    });
+    const todos = querySnapshot.docs.map(processTodoDocument);
 
     const todosWithValidation = todos.map((todo) => TodoSchema.parse(todo));
     return await enhanceWithUserData(todosWithValidation);

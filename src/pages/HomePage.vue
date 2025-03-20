@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-import Todos from '../modules/todo/components/Todos.vue';
+import TodosHomeView from '../modules/todo/components/TodosHomeView.vue';
+
 
 </script>\
 
 <template>
-  <Todos />
+  <TodosHomeView />
 </template>

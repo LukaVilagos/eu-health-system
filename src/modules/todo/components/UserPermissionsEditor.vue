@@ -1,11 +1,7 @@
 <script lang="ts" setup>
-import { ref, watch } from 'vue';
 import { Checkbox, Button, Message, AutoComplete, ProgressSpinner } from 'primevue';
 import type { PermissionSchemaType } from '../models/Todo';
-import { PermissionLevel } from '../models/Todo';
-import { searchUsersByEmail } from '../../user/utils/userSearch';
-import { type UserSchemaType } from '../../user/models/User';
-import { useUserQuery } from '../../user/hooks/useUserHooks';
+import { useUserPermissions } from '../hooks/useUserPermissions';
 
 const props = defineProps({
     modelValue: {
@@ -34,220 +30,27 @@ const props = defineProps({
     }
 });
 
-const emit = defineEmits(['update:modelValue', 'add-user', 'remove-user', 'update-permissions']);
+const emit = defineEmits<{
+    'update:modelValue': [permissions: Record<string, PermissionSchemaType>];
+    'add-user': [data: { userId: string, user: { email: string, displayName: string | null, permissions: string[] } }];
+    'remove-user': [userId: string];
+    'update-permissions': [data: { userId: string, permissions: string[] }];
+}>();
 
-const userEmail = ref('');
-const selectedPermissions = ref<Record<string, string[]>>({});
-const sharedUsers = ref<Record<string, { email: string, displayName: string | null, permissions: string[] }>>({});
-const searchResults = ref<UserSchemaType[]>([]);
-const searchLoading = ref(false);
-const searchError = ref('');
-
-const permissionOptions = [
-    { name: 'View', value: PermissionLevel.VIEW },
-    { name: 'Edit', value: PermissionLevel.EDIT },
-    { name: 'Delete', value: PermissionLevel.DELETE },
-    { name: 'Admin', value: PermissionLevel.ADMIN }
-];
-
-watch(() => props.modelValue, async (newValue) => {
-    if (newValue) {
-        for (const [userId, data] of Object.entries(newValue)) {
-            if (!sharedUsers.value[userId]) {
-                try {
-                    // Use useUserQuery instead of getUserDocument directly
-                    const userQuery = useUserQuery(userId);
-                    // Wait for user data to load
-                    const userData = userQuery.data.value;
-
-                    if (userData) {
-                        sharedUsers.value[userId] = {
-                            email: userData.email || '',
-                            displayName: userData.displayName || null,
-                            permissions: data.permissions
-                        };
-                    } else if (userQuery.error.value) {
-                        console.error(`Error fetching user data for ${userId}:`, userQuery.error.value);
-                        sharedUsers.value[userId] = {
-                            email: '',
-                            displayName: 'Unknown User',
-                            permissions: data.permissions
-                        };
-                    }
-
-                    selectedPermissions.value[userId] = [...data.permissions];
-                } catch (error) {
-                    console.error(`Error fetching user data for ${userId}:`, error);
-                    sharedUsers.value[userId] = {
-                        email: '',
-                        displayName: 'Unknown User',
-                        permissions: data.permissions
-                    };
-                    selectedPermissions.value[userId] = [...data.permissions];
-                }
-            }
-        }
-    }
-}, { immediate: true, deep: true });
-
-const searchUsers = async (event: { query: string }) => {
-    if (event.query.length < 2) return;
-
-    searchLoading.value = true;
-    searchError.value = '';
-
-    try {
-        const results = await searchUsersByEmail(event.query);
-
-        searchResults.value = results.filter(user => {
-            if (user.id === props.ownerId) return false;
-            if (sharedUsers.value[user.id]) return false;
-            if (props.existingUserIds.includes(user.id)) return false;
-            return true;
-        });
-
-        if (results.length > 0 && searchResults.value.length === 0) {
-            searchError.value = 'No eligible users found with this email';
-        } else if (results.length === 0 && event.query.length > 2) {
-            searchError.value = `No user found with email containing "${event.query}"`;
-        }
-    } catch (error) {
-        console.error('Error searching users:', error);
-        searchError.value = 'Error searching for users';
-    } finally {
-        searchLoading.value = false;
-    }
-};
-
-const addUser = async () => {
-    if (!userEmail.value) return;
-
-    searchLoading.value = true;
-    searchError.value = '';
-
-    try {
-        const results = await searchUsersByEmail(userEmail.value);
-
-        if (results.length === 0) {
-            searchError.value = `No user found with email "${userEmail.value}"`;
-            return;
-        }
-
-        const user = results[0];
-
-        if (user.id === props.ownerId) {
-            searchError.value = 'Cannot add the owner to permissions';
-            return;
-        }
-
-        if (sharedUsers.value[user.id] || props.existingUserIds.includes(user.id)) {
-            searchError.value = 'This user has already been added';
-            return;
-        }
-
-        const userId = user.id;
-        const defaultPermissions = [PermissionLevel.VIEW];
-
-        sharedUsers.value[userId] = {
-            email: user.email || '',
-            displayName: user.displayName,
-            permissions: defaultPermissions
-        };
-
-        selectedPermissions.value[userId] = defaultPermissions;
-
-        emit('add-user', {
-            userId,
-            user: {
-                email: user.email || '',
-                displayName: user.displayName,
-                permissions: defaultPermissions
-            }
-        });
-
-        updateModelValue();
-    } catch (error) {
-        console.error('Error adding user:', error);
-        searchError.value = 'Error adding user';
-    } finally {
-        searchLoading.value = false;
-        userEmail.value = '';
-    }
-};
-
-const selectUser = (user: UserSchemaType) => {
-    if (user.id === props.ownerId) {
-        searchError.value = 'Cannot add the owner to permissions';
-        return;
-    }
-
-    if (sharedUsers.value[user.id] || props.existingUserIds.includes(user.id)) {
-        searchError.value = 'This user has already been added';
-        return;
-    }
-
-    const userId = user.id;
-    const defaultPermissions = [PermissionLevel.VIEW];
-
-    sharedUsers.value[userId] = {
-        email: user.email || '',
-        displayName: user.displayName,
-        permissions: defaultPermissions
-    };
-
-    selectedPermissions.value[userId] = defaultPermissions;
-
-    emit('add-user', {
-        userId,
-        user: {
-            email: user.email || '',
-            displayName: user.displayName,
-            permissions: defaultPermissions
-        }
-    });
-
-    updateModelValue();
-    userEmail.value = '';
-    searchResults.value = [];
-};
-
-const removeUser = (userId: string) => {
-    emit('remove-user', userId);
-
-    delete sharedUsers.value[userId];
-    delete selectedPermissions.value[userId];
-
-    updateModelValue();
-};
-
-const updateModelValue = () => {
-    const updatedPermissions: Record<string, PermissionSchemaType> = {};
-
-    Object.entries(sharedUsers.value).forEach(([userId]) => {
-        updatedPermissions[userId] = {
-            permissions: selectedPermissions.value[userId] || [PermissionLevel.VIEW],
-            addedAt: props.modelValue[userId]?.addedAt || new Date(),
-            addedBy: props.modelValue[userId]?.addedBy || props.currentUserId
-        };
-    });
-
-    emit('update:modelValue', updatedPermissions);
-};
-
-watch(() => selectedPermissions.value, (newPermissions) => {
-    Object.entries(newPermissions).forEach(([userId, permissions]) => {
-        if (sharedUsers.value[userId] && !arePermissionsEqual(permissions, sharedUsers.value[userId].permissions)) {
-            sharedUsers.value[userId].permissions = [...permissions];
-            emit('update-permissions', { userId, permissions });
-        }
-    });
-    updateModelValue();
-}, { deep: true });
-
-function arePermissionsEqual(perms1: string[], perms2: string[]): boolean {
-    if (perms1.length !== perms2.length) return false;
-    return perms1.every(p => perms2.includes(p)) && perms2.every(p => perms1.includes(p));
-}
+const {
+    userEmail,
+    selectedPermissions,
+    sharedUsers,
+    searchResults,
+    searchLoading,
+    searchError,
+    loadingUserData,
+    permissionOptions,
+    searchUsers,
+    addUser,
+    selectUser,
+    removeUser
+} = useUserPermissions(props, emit);
 </script>
 
 <template>
@@ -277,7 +80,7 @@ function arePermissionsEqual(perms1: string[], perms2: string[]): boolean {
             </Message>
         </div>
 
-        <div v-if="props.loading" class="flex justify-center my-4">
+        <div v-if="props.loading || loadingUserData" class="flex justify-center my-4">
             <ProgressSpinner />
         </div>
 

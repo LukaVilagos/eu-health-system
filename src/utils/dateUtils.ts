@@ -3,18 +3,29 @@ export type FirestoreTimestamp = {
   nanoseconds: number;
 };
 
-export function isFirestoreTimestamp(value: any): value is FirestoreTimestamp {
+export type DateInput =
+  | Date
+  | FirestoreTimestamp
+  | { toDate: () => Date }
+  | number
+  | string
+  | null
+  | undefined;
+
+export function isFirestoreTimestamp(
+  value: DateInput
+): value is FirestoreTimestamp {
   return (
     typeof value === "object" &&
     value !== null &&
     "seconds" in value &&
     "nanoseconds" in value &&
-    typeof value.seconds === "number" &&
-    typeof value.nanoseconds === "number"
+    typeof (value as FirestoreTimestamp).seconds === "number" &&
+    typeof (value as FirestoreTimestamp).nanoseconds === "number"
   );
 }
 
-export function toDate(value: any): Date {
+export function toDate(value: DateInput): Date {
   if (value instanceof Date) {
     return value;
   }
@@ -23,7 +34,12 @@ export function toDate(value: any): Date {
     return new Date(value.seconds * 1000 + value.nanoseconds / 1000000);
   }
 
-  if (value?.toDate && typeof value.toDate === "function") {
+  if (
+    value &&
+    typeof value === "object" &&
+    "toDate" in value &&
+    typeof value.toDate === "function"
+  ) {
     return value.toDate();
   }
 
@@ -41,7 +57,7 @@ export function toDate(value: any): Date {
   return new Date();
 }
 
-export function ensureDate(value: any): Date {
+export function ensureDate(value: DateInput): Date {
   if (value === null || value === undefined) {
     return new Date();
   }
@@ -49,7 +65,7 @@ export function ensureDate(value: any): Date {
   return toDate(value);
 }
 
-export function formatDate(date: Date | any): string {
+export function formatDate(date: DateInput): string {
   const safeDate = ensureDate(date);
   return safeDate.toISOString();
 }

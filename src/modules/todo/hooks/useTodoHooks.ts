@@ -149,21 +149,8 @@ export function useCreateTodoMutation() {
       userId: string;
       sharedWith?: Record<string, PermissionSchemaType>;
     }) => {
-      const formattedSharedWith = sharedWith
-        ? Object.fromEntries(
-            Object.entries(sharedWith).map(([userId, permissions]) => [
-              userId,
-              {
-                permissions: permissions.permissions,
-                addedAt: permissions.addedAt || new Date(),
-                addedBy: permissions.addedBy || userId,
-              },
-            ])
-          )
-        : {};
-
-      if (Object.keys(formattedSharedWith).length > 0) {
-        return createTodoWithPermissions(text, userId, formattedSharedWith);
+      if (sharedWith && Object.keys(sharedWith).length > 0) {
+        return createTodoWithPermissions(text, userId, sharedWith);
       }
       return createTodo(text, userId);
     },

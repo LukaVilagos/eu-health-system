@@ -129,7 +129,7 @@ export const router = createRouter({
   routes,
 });
 
-router.beforeEach(async (to, _from) => {
+router.beforeEach(async (to) => {
   const auth = useAuth();
 
   await auth.waitForAuthInit();

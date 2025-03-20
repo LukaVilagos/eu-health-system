@@ -11,14 +11,14 @@ import TodoList from '../../todo/components/TodoList.vue';
 import CreateTodo from '../../todo/components/CreateTodo.vue';
 
 const route = useTypedRoute<"Profile">();
-const userId = route.typedParams.userId;
+const routeUserId = route.typedParams.userId;
 
 const { user: authUser } = useAuthUser();
 const currentUserId = computed(() => authUser.value?.id || '');
 
-const { data: user, isLoading: isUserLoading } = useUserQuery(userId);
-const { data: todos, isLoading: isTodosLoading, isFetching: isTodosByUserFetching, refetch } = useTodosByUserIdQuery(userId, currentUserId.value);
-const { data: sharedTodos, isLoading: isSharedTodosLoading, isFetching: isSharedTodosFetching } = useSharedTodosQuery(userId);
+const { data: user, isLoading: isUserLoading } = useUserQuery(routeUserId);
+const { data: todos, isLoading: isTodosLoading, isFetching: isTodosByUserFetching, refetch } = useTodosByUserIdQuery(routeUserId, currentUserId.value);
+const { data: sharedTodos, isLoading: isSharedTodosLoading, isFetching: isSharedTodosFetching } = useSharedTodosQuery(routeUserId);
 
 const createTodoVisible = ref(false);
 
