@@ -9,6 +9,7 @@ import LoadingIndicator from '../../../components/base/LoadingIndicator.vue';
 import UserDisplay from '../components/UserDisplay.vue';
 import TodoList from '../../todo/components/TodoList.vue';
 import CreateTodo from '../../todo/components/CreateTodo.vue';
+import AppointmentCalendar from "../../appointment/components/AppointmentCalendar.vue";
 
 const route = useTypedRoute<"Profile">();
 const routeUserId = route.typedParams.userId;
@@ -56,14 +57,16 @@ defineProps({
             </template>
         </Card>
         <div v-if="!isUserLoading">
+          <div class="flex flex-col gap-4">
             <TodoList :todos="todos || []" :isLoading="isTodosLoading || isTodosByUserFetching"
                 :currentUserId="currentUserId" displayMode="list" :showOwner="false" :actions="['add', 'delete']"
                 title="USER TODOS" @add="showCreateDialog" />
 
-            <div class="mt-4">
-                <TodoList :todos="sharedTodos || []" :isLoading="isSharedTodosLoading || isSharedTodosFetching"
-                    :currentUserId="currentUserId" displayMode="list" :showOwner="true" :actions="['delete']"
-                    title="SHARED WITH USER" />
+            <TodoList :todos="sharedTodos || []" :isLoading="isSharedTodosLoading || isSharedTodosFetching"
+                :currentUserId="currentUserId" displayMode="list" :showOwner="true" :actions="['delete']"
+                title="SHARED WITH USER" />
+
+            <AppointmentCalendar />
             </div>
         </div>
     </div>
