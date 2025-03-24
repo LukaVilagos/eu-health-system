@@ -8,6 +8,7 @@ import {
   getDocs,
   Query,
   query,
+  QueryDocumentSnapshot,
   where,
   type DocumentData,
 } from "firebase/firestore";
@@ -22,9 +23,9 @@ import {
 import { db } from "../../../services/api/firebase";
 import {
   AppointmentReportSchema,
-  checkIfReportExists,
   getReportByAppointmentId,
 } from "./AppointmentReport";
+import { ensureDate } from "../../../utils/dateUtils";
 
 export const APPOINTMENT_COLLECTION_NAME = "appointments";
 
@@ -106,11 +107,7 @@ export const AppointmentSchema = DefaultSchema.extend({
 
   specialtyRequired: z.string().optional(),
 
-  reportId: z
-    .string()
-    .refine(async (reportId) => await checkIfReportExists(reportId), {
-      message: "Invalid reportId: Report does not exist.",
-    }),
+  reportId: z.string().nullable(),
 });
 
 export const AppointmentWithUserSchema = AppointmentSchema.extend({
@@ -137,6 +134,7 @@ export const AppointmentCreateSchema = AppointmentSchema.omit({
   estimatedCost: true,
   actualCost: true,
   isPaid: true,
+  reportId: true,
 });
 
 export type AppointmentSchemaType = z.infer<typeof AppointmentSchema>;
@@ -199,6 +197,61 @@ async function enhanceWithReportData(
   );
 }
 
+function processAppointmentDocument(
+  doc: QueryDocumentSnapshot<DocumentData>
+): AppointmentSchemaType {
+  const data = doc.data();
+
+  // Process dates to ensure they're proper JavaScript Date objects
+  const processedData: Partial<AppointmentSchemaType> = {
+    id: doc.id,
+    doctorId: data.doctorId,
+    patientId: data.patientId,
+    reservationDate: ensureDate(data.reservationDate),
+    reservationDuration: data.reservationDuration || 30,
+    reservationStatus: data.reservationStatus || AppointmentStatus.PENDING,
+    appointmentType: data.appointmentType || AppointmentType.IN_PERSON,
+    urgencyLevel: data.urgencyLevel || AppointmentUrgency.ROUTINE,
+    reasonForVisit: data.reasonForVisit,
+    symptoms: data.symptoms || [],
+    patientNotes: data.patientNotes || "",
+    isFollowUp: data.isFollowUp || false,
+    previousAppointmentId: data.previousAppointmentId,
+    location: data.location,
+    roomNumber: data.roomNumber,
+    videoCallLink: data.videoCallLink,
+    createdByUser: data.createdByUser,
+    cancellationReason: data.cancellationReason,
+    cancellationDate: data.cancellationDate
+      ? ensureDate(data.cancellationDate)
+      : undefined,
+    cancelledByUserId: data.cancelledByUserId,
+    rescheduleCount: data.rescheduleCount || 0,
+    checkedIn: data.checkedIn || false,
+    checkedInTime: data.checkedInTime
+      ? ensureDate(data.checkedInTime)
+      : undefined,
+    completedTime: data.completedTime
+      ? ensureDate(data.completedTime)
+      : undefined,
+    reminderSent: data.reminderSent || false,
+    lastReminderDate: data.lastReminderDate
+      ? ensureDate(data.lastReminderDate)
+      : undefined,
+    insuranceVerified: data.insuranceVerified || false,
+    estimatedCost: data.estimatedCost,
+    actualCost: data.actualCost,
+    isPaid: data.isPaid || false,
+    specialtyRequired: data.specialtyRequired,
+    reportId: data.reportId || null,
+    createdAt: ensureDate(data.createdAt),
+    updatedAt: ensureDate(data.updatedAt),
+    deletedAt: data.deletedAt ? ensureDate(data.deletedAt) : null,
+  };
+
+  return processedData as AppointmentSchemaType;
+}
+
 export async function getAppointmentsForUser(
   userId: string,
   userRole: UserRoles,
@@ -225,8 +278,14 @@ export async function getAppointmentsForUser(
       return [];
     }
 
-    const appointmentsWithValidation = appointments.docs.map((appointment) =>
-      AppointmentSchema.parse(appointment.data())
+    const processedAppointments = appointments.docs.map(
+      processAppointmentDocument
+    );
+
+    const appointmentsWithValidation = await Promise.all(
+      processedAppointments.map((appointment) =>
+        AppointmentSchema.parseAsync(appointment)
+      )
     );
 
     const enhancedAppointments = await enhanceWithUserData(
@@ -262,8 +321,13 @@ export async function getAppointmentById(
       return null;
     }
 
-    const appointment = appointments.docs[0].data();
-    const validatedAppointment = AppointmentSchema.parse(appointment);
+    const processedAppointment = processAppointmentDocument(
+      appointments.docs[0]
+    );
+    const validatedAppointment = await AppointmentSchema.parseAsync(
+      processedAppointment
+    );
+
     let enhancedAppointment = await enhanceWithUserData([validatedAppointment]);
 
     if (includeReport) {
@@ -286,8 +350,9 @@ export async function createAppointment(
       APPOINTMENT_COLLECTION_NAME
     );
 
-    const validatedAppointmentData =
-      AppointmentCreateSchema.parse(appointmentData);
+    const validatedAppointmentData = await AppointmentCreateSchema.parseAsync(
+      appointmentData
+    );
 
     return await addDoc(appointmentCollectionRef, validatedAppointmentData);
   } catch (error) {
