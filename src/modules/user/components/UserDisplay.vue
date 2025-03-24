@@ -32,7 +32,7 @@ defineProps({
 </script>
 
 <template>
-    <div class="user-display flex items-center gap-2">
+    <div class="user-display flex items-center gap-4">
         <Avatar :image="user?.photoURL as string" shape="circle"
             :size="size === 'small' ? 'normal' : size === 'large' ? 'xlarge' : 'large'" />
         <div :class="{ 'text-xs': size === 'small', 'text-base': size === 'medium', 'text-lg': size === 'large' }">
